@@ -5,48 +5,68 @@
 
 #define FILE_IO_FILE_NAME "Arbeitsfeld.txt"
 
-void FileIO_exception(unsigned int returnCode, byte& inHandle)
+byte FileIO_fileHandle;
+
+void FileIO_exception(unsigned int returnCode)
 {
-   if (inHandle) CloseFile(inHandle);
+   if (FileIO_fileHandle) CloseFile(FileIO_fileHandle);
    TextOut(0, LCD_LINE1, "FileIO exception!");
    TextOut(0, LCD_LINE2, "code            ");
    TextOut(50, LCD_LINE2, FormatNum("%04x " , returnCode));
    PlayTone(TONE_C5, SEC_1);
+   Wait(5000);
    Stop(true);
 }
 
-void FileIO_readMap(MapModule_Map inMap, byte& inHandle)
+void FileIO_readMap(MapModule_Map& inMap)
 {
+
+               byte readVal[1];
+               unsigned int readlength = 13*14;
+               unsigned int rtn_code = ReadBytes(FileIO_fileHandle,readlength,inMap.map);
+               if(rtn_code != LDR_SUCCESS)
+               {
+                   FileIO_exception(rtn_code);
+               }
+               TextOut(0, LCD_LINE1, "ReadDone!");
+               Wait(500);
+               
+/*
      for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
          for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
          {
-               unsigned int rtn_code = Read(inHandle,inMap[y][x]);
+               byte readVal[1];
+               unsigned int readlength = 14*14;
+               unsigned int rtn_code = ReadBytes(FileIO_fileHandle,readlength,inMap.map);
                if(rtn_code != LDR_SUCCESS)
                {
-                   FileIO_exception(rtn_code,inHandle);
+                   FileIO_exception(rtn_code);
                }
+               TextOut(0, LCD_LINE1, "ReadDone!");
+               Wait(500);
+               inMap.map[y][x] = readVal[0] ;
          }
      }
-
+    */
 }
 
 void FileIO_initWorkField()
 {
-     unsigned int file_size = 0;
-     byte handle = 0;    // Start with the assumptions the file doesn't exist and needs to be created.
-     unsigned int rtn_code = OpenFileRead(FILE_IO_FILE_NAME, file_size, handle);
+     unsigned int file_size = 14*14;
+     FileIO_fileHandle = 0;    // Start with the assumptions the file doesn't exist and needs to be created.
+     unsigned int rtn_code = OpenFileRead(FILE_IO_FILE_NAME, file_size, FileIO_fileHandle);
 
      // Return code handling
      switch (rtn_code)
      {
             case LDR_SUCCESS:
-                 FileIO_readMap(g_MapModule_WorkField, handle);
-                 CloseFile(handle);
+                 FileIO_readMap(g_MapModule_WorkField);
+                 CloseFile(FileIO_fileHandle);
                  return;
 
             default:
-                    FileIO_exception(rtn_code,handle);
+                    FileIO_exception(rtn_code);
                     break;
      }
 }
