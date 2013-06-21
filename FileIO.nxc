@@ -1,0 +1,54 @@
+#ifndef __FILE_IO__
+#define __FILE_IO__
+
+#include "MapModule.nxc"
+
+#define FILE_IO_FILE_NAME "Arbeitsfeld.txt"
+
+void FileIO_exception(unsigned int returnCode, byte& inHandle)
+{
+   if (inHandle) CloseFile(inHandle);
+   TextOut(0, LCD_LINE1, "FileIO exception!");
+   TextOut(0, LCD_LINE2, "code            ");
+   TextOut(50, LCD_LINE2, FormatNum("%04x " , returnCode));
+   PlayTone(TONE_C5, SEC_1);
+   Stop(true);
+}
+
+void FileIO_readMap(MapModule_Map inMap, byte& inHandle)
+{
+     for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
+     {
+         for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
+         {
+               unsigned int rtn_code = Read(inHandle,inMap[y][x]);
+               if(rtn_code != LDR_SUCCESS)
+               {
+                   FileIO_exception(rtn_code,inHandle);
+               }
+         }
+     }
+
+}
+
+void FileIO_initWorkField()
+{
+     unsigned int file_size = 0;
+     byte handle = 0;    // Start with the assumptions the file doesn't exist and needs to be created.
+     unsigned int rtn_code = OpenFileRead(FILE_IO_FILE_NAME, file_size, handle);
+
+     // Return code handling
+     switch (rtn_code)
+     {
+            case LDR_SUCCESS:
+                 FileIO_readMap(g_MapModule_WorkField, handle);
+                 CloseFile(handle);
+                 return;
+
+            default:
+                    FileIO_exception(rtn_code,handle);
+                    break;
+     }
+}
+
+#endif

@@ -1,0 +1,13 @@
+#ifndef __MAP_MODULE__
+#define __MAP_MODULE__
+
+#define GLOBAL_MAP_WIDTH 14
+#define GLOBAL_MAP_HEIGHT 14
+
+struct MapModule_Map {
+       char map[GLOBAL_MAP_HEIGHT][GLOBAL_MAP_WIDTH];
+};
+
+MapModule_Map g_MapModule_WorkField;
+
+#endif
