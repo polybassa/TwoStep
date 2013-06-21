@@ -1,0 +1,64 @@
+#ifndef __TIMERS_AND_EVENTS__
+#define __TIMERS_AND_EVENTS__
+
+//--------------------------EVENTS---------------------------------------------
+typedef unsigned int EventType;
+
+#define GLOBAL_EVENT_1 0x01  //Rename me
+#define GLOBAL_EVENT_2 0x02  //Rename me
+#define GLOBAL_EVENT_3 0x04  //Rename me
+
+EventType g_Event_EventBitMap;
+
+#define Event_setEvent(event){g_Event_EventBitMap |= event;}
+#define Event_eventIsPresent(event) (g_Event_EventBitMap & event)
+#define Event_clearEvent(event) { g_Event_EventBitMap = g_Event_EventBitMap & ~event; }
+
+//--------------------------TIMERS---------------------------------------------
+struct TimerType
+{
+       EventType mEvent;
+       unsigned long mDuration;
+       unsigned long mEndTick;
+       bool isRunning;
+};
+
+#define GLOBAL_NUMBER_OF_TIMERS 8
+#define GLOBAL_TIMER_1      //Rename me
+#define GLOBAL_TIMER_2      //Rename me
+#define GLOBAL_TIMER_3      //Rename me
+
+TimerType g_Timer_AllTimers[GLOBAL_NUMBER_OF_TIMERS];
+
+task Timer_executeTimers() {
+     while(true)
+     {
+                for(unsigned int i = 0; i < GLOBAL_NUMBER_OF_TIMERS; i++)
+                {
+                             if(g_Timer_AllTimers[i].isRunning)
+                             {
+                                                     if(g_Timer_AllTimers[i].mEndTick < CurrentTick())
+                                                     {
+                                                                         Event_setEvent(g_Timer_AllTimers[i].mEvent);
+                                                                         g_Timer_AllTimers[i].isRunning = false;
+                                                     }
+                             }
+                }
+                Wait(10);
+     }
+}
+
+void Timer_initTimers(void){
+     for(unsigned int i = 0; i < GLOBAL_NUMBER_OF_TIMERS; i++)
+     {
+                   g_Timer_AllTimers[i].isRunning = false;
+                   g_Timer_AllTimers[i].mEvent = 0x00;
+                   g_Timer_AllTimers[i].mDuration = 0;
+                   g_Timer_AllTimers[i].mEndTick = 0;
+     }
+}
+void Timer_setTimer(unsigned int timer,unsigned int time, EventType ev) { g_Timer_AllTimers[timer].mEvent = ev; g_Timer_AllTimers[timer].mDuration = time; }
+void Timer_startTimer(unsigned int timer) { g_Timer_AllTimers[timer].mEndTick = CurrentTick() + g_Timer_AllTimers[timer].mDuration; g_Timer_AllTimers[timer].isRunning = true; }
+void Timer_cancelTimer(unsigned int timer) { g_Timer_AllTimers[timer].isRunning = false; }
+
+#endif
