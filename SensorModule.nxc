@@ -1,0 +1,215 @@
+#ifndef __SENSOR_MODULE__
+#define __SENSOR_MODULE__
+
+//******************************************************
+// Sensor Module
+//
+// Authors: Alexander Strobl, Daniel Tatzel
+//******************************************************
+
+// Temp main for testing purposes, must be deleted!
+task main() { }
+
+//******************************************************
+// Declarations
+//******************************************************
+
+// Different mutex to prevent reading while the values get updated
+mutex MutexColor;
+mutex MutexUSonic;
+mutex MutexCmps;
+
+/* struct _SU_Values
+	- Stores all relevant sensor values
+	- Compass section:
+		iCurrentDeg: 			Current direction in degrees
+
+	- Color section:
+		byMeasuredColor:		Current color value
+		byTargetColor:			Color of the target table
+		byTargetColorFound: 	1 if the robot found the target table (default: 0)
+
+	- Ultrasonic section:
+		iDistance_Front:		Current distance to an object of the front sensor
+		iDistance_Back:			Current distance to an object of the back sensor
+
+	- Miscellaneous section:
+		iInterval:				Refresh intervall of the sensor values
+
+*/
+struct _SU_Values
+{
+  // Compass
+  unsigned int iCurrentDeg;
+
+  // Color
+  byte byMeasuredColor;
+  byte byTargetColor;
+  byte byTargetColorFound;
+
+  // Ultrasonic
+  unsigned int iDistance_Front;
+  unsigned int iDistance_Back;
+
+  // Miscellaneous
+  unsigned int iInterval;
+};
+
+/* Function: SU_InitSensors
+	- Initializes all Sensors (RGB, ultrasonic and compass), must be called from the main task
+	- Variable iReadingIntervall:	Sets the refresh intervall of the sensor values
+*/
+unsigned int SU_InitSensors(unsigned int iReadingInterval);
+
+/* Task: SU_CheckDistances
+	- Reads the distance values of both ultrasonic sensors
+*/
+task SU_CheckDistances();
+
+/* Task: SU_CheckColors
+	- Reads the color value of the RGB sensor
+	- Sets the variable "byTargetColorFound" in the sruct _SU_Values to 1 if the robot found the target table
+*/
+task SU_CheckColors();
+
+/* Task: SU_CheckCompass
+	- Reads the current direction of the compass sensor
+*/
+task SU_CheckCompass();
+
+/* Task: SU_ReadSensors
+	- Starts all sensor tasks
+*/
+task SU_ReadSensors();
+
+
+//******************************************************
+// Includes
+//******************************************************
+
+// Compass library. Must be in the main directory
+#include "IMU-lib.nxc"
+
+
+//******************************************************
+// Defines
+//******************************************************
+
+#define SU_ADDR              0x22
+// Next define is not in use?
+//#define SU_ADDR_CMPSNX    0x02
+#define SU_COMPASS_SENSOR_PORT S1
+#define SU_COLOR_SENSOR       S2
+#define SU_SONIC_FRONT       S3
+#define SU_SONIC_BACK        S4
+
+
+//******************************************************
+// Definitions
+//******************************************************
+
+// Struct
+_SU_Values SU_Values;
+
+
+//******************************************************
+// Functions and tasks
+//******************************************************
+
+unsigned int SU_InitSensors(unsigned int iReadingInterval)
+{
+   // SU_COLOR_SENSOR
+   Acquire( MutexColor );
+   SetSensorColorFull(SU_COLOR_SENSOR);
+   SU_Values.byMeasuredColor = 0;
+   Release( MutexColor );
+
+   // Compass
+   Acquire( MutexCmps );
+   IMU_Init(SU_COMPASS_SENSOR_PORT);
+   SU_Values.iCurrentDeg = 0;
+   Release( MutexCmps );
+
+   // UltraSonic
+
+   // Front
+   Acquire( MutexUSonic );
+   SetSensorLowspeed( SU_SONIC_FRONT );
+   SU_Values.iDistance_Front = 0;
+
+   // Back
+   SetSensorLowspeed( SU_SONIC_BACK );
+   SU_Values.iDistance_Back = 0;
+   Release( MutexUSonic );
+
+   if( iReadingInterval != 0)
+       SU_Values.iInterval = iReadingInterval;
+   else
+       SU_Values.iInterval = 200;
+   return 0;
+}
+
+task SU_CheckDistances()
+{
+   while(1)
+   {
+      // Front Sensor
+      Acquire( MutexUSonic );
+      SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
+
+      // Back Sensor
+      SU_Values.iDistance_Back = SensorUS ( SU_SONIC_BACK );
+      Release( MutexUSonic );
+
+      Wait(SU_Values.iInterval);
+   }
+}
+
+
+task SU_CheckColors()
+{
+  ColorSensorReadType csr;
+  csr.Port = SU_COLOR_SENSOR;
+
+  while (1)
+  {
+     Acquire( MutexColor );
+     SysColorSensorRead(csr);
+     if (csr.Result == NO_ERR)
+     {
+        SU_Values.byMeasuredColor = csr.ColorValue;
+
+        // Event setzen
+        if(csr.ColorValue == SU_Values.byTargetColor)
+            SU_Values.byTargetColorFound = 1;
+        else
+            SU_Values.byTargetColorFound = 0;
+     }
+     Release ( MutexColor );
+
+     Wait(SU_Values.iInterval);
+  }
+}
+
+task SU_CheckCompass()
+{
+   while(1)
+   {
+      Acquire ( MutexCmps );
+      unsigned int x = 0;
+      int heading = 0;
+
+      SU_Values.iCurrentDeg = IMU_ReadCompassHeading(SU_COMPASS_SENSOR_PORT, SU_ADDR);
+      Release ( MutexCmps );
+
+      Wait(SU_Values.iInterval);
+   }
+}
+
+
+task SU_ReadSensors()
+{
+   Precedes(SU_CheckDistances, SU_CheckColors, SU_CheckCompass);
+}
+
+#endif
