@@ -20,9 +20,7 @@ void FileIO_exception(unsigned int returnCode)
 
 void FileIO_readMap(MapModule_Map& inMap)
 {
-
-               byte readVal[1];
-               unsigned int readlength = 13*14;
+               unsigned int readlength = 14*14;
                unsigned int rtn_code = ReadBytes(FileIO_fileHandle,readlength,inMap.map);
                if(rtn_code != LDR_SUCCESS)
                {
@@ -66,8 +64,8 @@ void FileIO_initWorkField()
                  return;
 
             default:
-                    FileIO_exception(rtn_code);
-                    break;
+                 FileIO_exception(rtn_code);
+                 break;
      }
 }
 

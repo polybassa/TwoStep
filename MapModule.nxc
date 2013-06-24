@@ -5,7 +5,7 @@
 #define GLOBAL_MAP_HEIGHT 14
 
 struct MapModule_Map {
-       byte map[GLOBAL_MAP_HEIGHT] [GLOBAL_MAP_WIDTH];
+       byte map[GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH];
 };
 
 MapModule_Map g_MapModule_WorkField;
