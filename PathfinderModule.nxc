@@ -1,9 +1,62 @@
 #ifndef __PATHFINDER__
 #define __PATHFINDER__
 
+/*******************************
+ * PathFinder
+ * 
+ * author: Nils Weiß
+ * *****************************/
+
+/*******************************
+ * Information:
+ *******************************/
+ 
+ 
+/*******************************
+ * Includes
+ *******************************/
+
 #include "MapModule.nxc"
+#include "FileIO.nxc"
+
+/*******************************
+ * Declaration
+ *******************************/
+
+MapModule_Map g_PathFinder_RoadMap;
+
+void PathFinder_init(void);
+void PathFinder_annotateMap(byte target);
+void PathFinder_searchWay(void);
+
+/******************************
+ * Defines:
+ ******************************/
 
 #define max(v1, v2) { if( v1 >= v2 ) return v1; else return v2; }
+
+/******************************
+ * Debugs
+ * using LCD
+ ******************************/
+ 
+ #define Pathfinder_DEBUG	// debug klausel
+ #define Pathfinder_FEEDBACK	// klausel, die bestimmt, wann feedback vom Robo nach außen gegeben wird
+
+/*******************************
+ * Initialisation
+ ******************************/
+
+	
+/*******************************
+ *Functions and tasks
+ *******************************/
+
+void PathFinder_init(void)
+{
+    FileIO_initWorkField();
+    memcpy(g_PathFinder_RoadMap.map, g_MapModule_WorkField.map, SizeOf(g_MapModule_WorkField.map));
+}
 
 void PathFinder_annotateMap(byte target)
 {
@@ -11,7 +64,7 @@ void PathFinder_annotateMap(byte target)
      {
              for(int x = 0; x < GLOBAL_MAP_WIDTH; x++)
              {
-                     if(g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x] == target) g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x] = 'z';
+                     if(g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x] == target) g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x] = 'z';
              }
      }
      
@@ -24,13 +77,13 @@ void PathFinder_annotateMap(byte target)
              {
                      for(int x = 0; x < GLOBAL_MAP_WIDTH; x++)
                      {
-                             if(g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x] == ' ')
+                             if(g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x] == ' ')
                              {
                                   everything_done = false;
-                                  byte left = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x - 1];
-                                  byte right = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x + 1];
-                                  byte above = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * (y - 1) + x];
-                                  byte below = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * (y + 1) + x];
+                                  byte left = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x - 1];
+                                  byte right = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x + 1];
+                                  byte above = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y - 1) + x];
+                                  byte below = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y + 1) + x];
                              }
                              
                              unsigned int avg = 0;
@@ -56,7 +109,7 @@ void PathFinder_annotateMap(byte target)
 						                 {
 						                 	          avg = avg / count;
 							                          if ((byte)avg < 'b') {avg = 'b';}
-							                          g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x] = (byte)(--avg);
+							                          g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x] = (byte)(--avg);
                              }
                      }
              }
@@ -64,14 +117,14 @@ void PathFinder_annotateMap(byte target)
      }
 }
 
-void PathFinder_searchWay
+void PathFinder_searchWay(void)
 {
      unsigned int x_Pos, y_Pos;
 		 for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
 			     for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
            {
-				         if(g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y + x] == 'S') {x_Pos = x; y_Pos = y;};
+				         if(g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y + x] == 'S') {x_Pos = x; y_Pos = y;};
            }
 		 }
 		 
@@ -80,10 +133,10 @@ void PathFinder_searchWay
 		 
 		 while(searching)
 		 {
-            byte left = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos - 1];
-            byte right = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos + 1];
-            byte above = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * (y_Pos - 1) + x_Pos];
-            byte below = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * (y_Pos + 1) + x_Pos];
+            byte left = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos - 1];
+            byte right = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos + 1];
+            byte above = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos - 1) + x_Pos];
+            byte below = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos + 1) + x_Pos];
 		 }
 		 
      byte maxValue = max( max( left, right ), max( above , below ));
@@ -92,8 +145,8 @@ void PathFinder_searchWay
      {
             while(true)
             {
-                  byte current = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos];
-                  byte next = g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos + 1];
+                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos];
+                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos + 1];
                   if(current == 'z') searching = false;
                   
                   if(current >= next || next == '#')
@@ -104,12 +157,79 @@ void PathFinder_searchWay
                   }
                   else
                   {
-                       g_MapModule_Workfield.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos] = 'X';
+                       g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos] = 'X';
                        x_Pos++;
                        steps++;
                   }
 
             }
+     } else if(maxValue == right)
+     {
+            while(true)
+            {
+                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos];
+                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos - 1];
+                  if(current == 'z') searching = false;
+                  
+                  if(current >= next || next == '#')
+                  {
+                       // some output could be here
+                       steps = 0;
+                       break;
+                  }
+                  else
+                  {
+                       g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos] = 'X';
+                       x_Pos--;
+                       steps++;
+                  }
+
+            }
+     } else if(maxValue == above)
+     {
+            while(true)
+            {
+                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos];
+                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos + 1) + x_Pos];
+                  if(current == 'z') searching = false;
+                  
+                  if(current >= next || next == '#')
+                  {
+                       // some output could be here
+                       steps = 0;
+                       break;
+                  }
+                  else
+                  {
+                       g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos + 1) + x_Pos] = 'X';
+                       y_Pos++;
+                       steps++;
+                  }
+
+            }
+     } else
+     {
+            while(true)
+            {
+                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos];
+                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos - 1) + x_Pos];
+                  if(current == 'z') searching = false;
+                  
+                  if(current >= next || next == '#')
+                  {
+                       // some output could be here
+                       steps = 0;
+                       break;
+                  }
+                  else
+                  {
+                       g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * (y_Pos - 1) + x_Pos] = 'X';
+                       y_Pos--;
+                       steps++;
+                  }
+
+            }
+     } 
 }
 
 #endif
