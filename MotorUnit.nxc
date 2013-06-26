@@ -74,7 +74,7 @@ struct _MU_data
 	float MU_distance;	
 };
 
-bool global_someth_exist;	// globale Variable für die Tatsache, ob ein Getränk vorhanden ist
+bool global_someth_exist;	// globale Variable für die Tatsache, ob ein Getränk vorhanden ist  <<--- @Nils: Können wir uns vielleicht sparen, wenn wir für den anfang gar nicht unterscheiden ob wir ein getränk haben oder nicht, und einfach immer vorsichtig fahren
 unsigned int global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
 
 /* function: MU_drive_forward
@@ -132,7 +132,7 @@ task MU_informations();
  * Defines:
  ******************************/
 #define MU_GLOBAL_X_0	6
-#define MU_GLOBLAL_Y_0	1
+#define MU_GLOBAL_Y_0	1
 #define MU_GLOBAL_ANGLE_0	0	// veränderbar, wenn der Roboter inital einmal hingestellt wurde
 #define GLOBAL_1_SEKTOR 25	// definition wie groß ein Sektor im Raum ist
 #define MU_GLOBAL_ANGLE_MOTOR 360	// Winkel, damit sich das Rad einmal dreht
@@ -361,7 +361,7 @@ bool MU_start_all_features()
 	global_Dig0 = SU_Values.iCurrentDeg;
 	
 	MU_data_info.MU_x_pos = MU_GLOBAL_X_0;
-	MU_data_info.MU_y_pos = MU_GLOBLAL_Y_0;
+	MU_data_info.MU_y_pos = MU_GLOBAL_Y_0;
 	MU_data_info.MU_angle = MU_GLOBAL_ANGLE_0;
 	MU_data_info.MU_sin_angle = 0;
 	MU_data_info.MU_distance = 0;
