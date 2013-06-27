@@ -7,9 +7,6 @@
 // Authors: Alexander Strobl, Daniel Tatzel
 //******************************************************
 
-// Temp main for testing purposes, must be deleted!
-task main() { }
-
 //******************************************************
 // Declarations
 //******************************************************
@@ -96,12 +93,12 @@ task SU_ReadSensors();
 //******************************************************
 
 #define SU_ADDR              0x22
-// Next define is not in use?
-//#define SU_ADDR_CMPSNX    0x02
 #define SU_COMPASS_SENSOR_PORT S1
 #define SU_COLOR_SENSOR       S2
 #define SU_SONIC_FRONT       S3
 #define SU_SONIC_BACK        S4
+
+#define SU_SENSOR_DEBUG 1
 
 
 //******************************************************
@@ -115,6 +112,35 @@ _SU_Values SU_Values;
 //******************************************************
 // Functions and tasks
 //******************************************************
+
+
+task SU_DisplayOutput()
+{
+    while(true)
+    {
+    TextOut(0,LCD_LINE1, "D: ");
+    NumOut(40,LCD_LINE1, SU_Values.iCurrentDeg);
+
+    TextOut(0,LCD_LINE2, "C: ");
+    NumOut(40,LCD_LINE2, SU_Values.byMeasuredColor);
+
+    TextOut(0,LCD_LINE3, "USF: ");
+    NumOut(40,LCD_LINE3, SU_Values.iDistance_Front);
+
+    TextOut(0,LCD_LINE4, "USB: ");
+    NumOut(40,LCD_LINE4, SU_Values.iDistance_Back);
+    Wait(180);
+    ClearScreen();
+    }
+}
+
+// Temp main for testing purposes, must be deleted!
+/*
+task main()
+{
+    SU_InitSensors(200);
+}
+*/
 
 unsigned int SU_InitSensors(unsigned int iReadingInterval)
 {
@@ -146,6 +172,8 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
        SU_Values.iInterval = iReadingInterval;
    else
        SU_Values.iInterval = 200;
+       
+   StartTask(SU_ReadSensors);
    return 0;
 }
 
@@ -209,7 +237,11 @@ task SU_CheckCompass()
 
 task SU_ReadSensors()
 {
-   Precedes(SU_CheckDistances, SU_CheckColors, SU_CheckCompass);
+   Precedes(SU_CheckDistances, SU_CheckColors, SU_CheckCompass
+   #ifdef SU_SENSOR_DEBUG
+   , SU_DisplayOutput
+   #endif /* SU_SENSOR_DEBUG */
+   );
 }
 
 #endif
