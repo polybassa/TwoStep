@@ -4,7 +4,7 @@
 /*******************************
  * PathFinder
  * 
- * author: Nils Weiß
+ * author: Nils Weiss
  * *****************************/
 
 /*******************************
@@ -173,11 +173,10 @@ void PathFinder_annotateMap(const byte target)
                                       }
                                       --avg_val;
 							          g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y + x] = avg_val;
-                                  }
-                          }
+                                 }
+                            }
                      }
              }
-     
      }
 }
 
@@ -211,121 +210,113 @@ void PathFinder_searchWay(void)
            {
 				if(g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y + x] == 'S') {x_Pos = x; y_Pos = y;};
            }
-		 }
+	}
 		 
-		 byte searching = true;
-		 unsigned int steps = 0;
-		 
-		 byte left, right, above, below;
-		 
-		 while(searching)
-		 {
-            left = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos - 1];
-            right = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos + 1];
-            above = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos - 1) + x_Pos];
-            below = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos + 1) + x_Pos];
-
-         byte maxValue1 = max(left, right);
+	 byte searching = true;
+	 unsigned int steps = 0;
+	 
+	 byte left, right, above, below;
+	 
+	 while(searching)
+	 {
+        left = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos - 1];
+        right = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos + 1];
+        above = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos - 1) + x_Pos];
+        below = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos + 1) + x_Pos];
+        byte maxValue1 = max(left, right);
         byte maxValue2 = max(above, below);
         byte maxValue = max(maxValue1, maxValue2);
-
-     if(maxValue == left)
-     {
+        if(maxValue == left)
+        {
             PathFinder_writeTurnActivityEntryInTimeTable(x_Pos, y_Pos, 270);
             while(true)
             {
-                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
-                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos - 1];
-                  
-                  if(current == 'z') searching = false;
-                  
-                  if(current >= next || next == '#')
-                  {
-                       PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 270, 'D', steps);
-                       steps = 0;
-                       break;
-                  }
-                  else
-                  {
-                       g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
-                       x_Pos--;
-                       steps++;
-                  }
-
+                byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
+                byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos - 1];
+              
+                if(current == 'z') searching = false;
+              
+                if(current >= next || next == '#')
+                {
+                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 270, 'D', steps);
+                    steps = 0;
+                    break;
+                }
+                else
+                {
+                   g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
+                   x_Pos--;
+                   steps++;
+                }
             }
-     } else if(maxValue == right)
-     {
+        } else if(maxValue == right)
+        {
             PathFinder_writeTurnActivityEntryInTimeTable(x_Pos, y_Pos, 90);
             while(true)
             {
-                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
-                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos + 1];
-
-                  if(current == 'z') searching = false;
-                  
-                  if(current >= next || next == '#')
-                  {
-                       PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 90, 'D', steps);
-                       steps = 0;
-                       break;
-                  }
-                  else
-                  {
-                       g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
-                       x_Pos++;
-                       steps++;
-                  }
-
+                byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
+                byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos + 1];
+                if(current == 'z') searching = false;
+              
+                if(current >= next || next == '#')
+                {
+                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 90, 'D', steps);
+                    steps = 0;
+                    break;
+                }
+                else
+                {
+                   g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
+                   x_Pos++;
+                   steps++;
+                }
             }
-     } else if(maxValue == above)
-     {
+        } else if(maxValue == above)
+        {
             PathFinder_writeTurnActivityEntryInTimeTable(x_Pos, y_Pos, 0);
             while(true)
             {
-                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
-                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos - 1) + x_Pos];
-
-                  if(current == 'z') searching = false;
-                  
-                  if(current >= next || next == '#')
-                  {
-                       PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 0, 'D', steps);
-                       steps = 0;
-                       break;
-                  }
-                  else
-                  {
-                       g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
-                       y_Pos--;
-                       steps++;
-                  }
-
+                byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
+                byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos - 1) + x_Pos];
+                if(current == 'z') searching = false;
+              
+                if(current >= next || next == '#')
+                {
+                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 0, 'D', steps);
+                   steps = 0;
+                   break;
+                }
+                else
+                {
+                   g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
+                   y_Pos--;
+                   steps++;
+                }
             }
-     } else
-     {
+        } else
+        {
             PathFinder_writeTurnActivityEntryInTimeTable(x_Pos, y_Pos, 180);
             while(true)
             {
-                  byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
-                  byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos + 1) + x_Pos];
-
-                  if(current == 'z') searching = false;
-                  
-                  if(current >= next || next == '#')
-                  {
-                       PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 180, 'D', steps);
-                       steps = 0;
-                       break;
-                  }
-                  else
-                  {
-                       g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
-                       y_Pos++;
-                       steps++;
-                  }
+                byte current = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos];
+                byte next = g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * (y_Pos + 1) + x_Pos];
+                if(current == 'z') searching = false;
+              
+                if(current >= next || next == '#')
+                {
+                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 180, 'D', steps);
+                   steps = 0;
+                   break;
+                }
+                else
+                {
+                   g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y_Pos + x_Pos] = 'X';
+                   y_Pos++;
+                   steps++;
+                }
             }
-     }
-     }
+        }
+   }
 }
 
 #endif
