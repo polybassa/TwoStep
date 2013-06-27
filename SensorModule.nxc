@@ -11,6 +11,8 @@
 // Declarations
 //******************************************************
 
+short SU_OldDir = 0;
+
 // Different mutex to prevent reading while the values get updated
 mutex MutexColor;
 mutex MutexUSonic;
@@ -87,18 +89,25 @@ task SU_ReadSensors();
 // Compass library. Must be in the main directory
 #include "IMU-lib.nxc"
 
+#include "MapModule.nxc"
+
 
 //******************************************************
 // Defines
 //******************************************************
 
-#define SU_ADDR              0x22
-#define SU_COMPASS_SENSOR_PORT S1
-#define SU_COLOR_SENSOR       S2
-#define SU_SONIC_FRONT       S3
-#define SU_SONIC_BACK        S4
+#define SU_ADDR              	0x22
+#define SU_COMPASS_SENSOR_PORT 	S1
+#define SU_COLOR_SENSOR       	S2
+#define SU_SONIC_FRONT       	S3
+#define SU_SONIC_BACK        	S4
+#define SU_SONIC_RADIUS			50
 
-#define SU_SENSOR_DEBUG 1
+// Schon irgendwo definiert?
+#define FIELD_SIZE
+
+// Turn display messages on / off
+#define SU_SENSOR_DEBUG
 
 
 //******************************************************
@@ -114,23 +123,23 @@ _SU_Values SU_Values;
 //******************************************************
 
 
-task SU_DisplayOutput()
+task SU_DisplayOutput( )
 {
-    while(true)
+    while( true )
     {
-    TextOut(0,LCD_LINE1, "D: ");
-    NumOut(40,LCD_LINE1, SU_Values.iCurrentDeg);
+    TextOut( 0,LCD_LINE1, "D: " );
+    NumOut( 40,LCD_LINE1, SU_Values.iCurrentDeg );
 
-    TextOut(0,LCD_LINE2, "C: ");
-    NumOut(40,LCD_LINE2, SU_Values.byMeasuredColor);
+    TextOut( 0,LCD_LINE2, "C: " );
+    NumOut( 40,LCD_LINE2, SU_Values.byMeasuredColor );
 
-    TextOut(0,LCD_LINE3, "USF: ");
-    NumOut(40,LCD_LINE3, SU_Values.iDistance_Front);
+    TextOut( 0,LCD_LINE3, "USF: " );
+    NumOut( 40,LCD_LINE3, SU_Values.iDistance_Front );
 
-    TextOut(0,LCD_LINE4, "USB: ");
-    NumOut(40,LCD_LINE4, SU_Values.iDistance_Back);
-    Wait(180);
-    ClearScreen();
+    TextOut( 0,LCD_LINE4, "USB: " );
+    NumOut( 40,LCD_LINE4, SU_Values.iDistance_Back );
+    Wait( SU_Values.iInterval );
+    ClearScreen( );
     }
 }
 
@@ -172,7 +181,7 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
        SU_Values.iInterval = iReadingInterval;
    else
        SU_Values.iInterval = 200;
-       
+
    StartTask(SU_ReadSensors);
    return 0;
 }
@@ -221,16 +230,16 @@ task SU_CheckColors()
 
 task SU_CheckCompass()
 {
-   while(1)
+   while( true )
    {
       Acquire ( MutexCmps );
       unsigned int x = 0;
       int heading = 0;
 
-      SU_Values.iCurrentDeg = IMU_ReadCompassHeading(SU_COMPASS_SENSOR_PORT, SU_ADDR);
+      SU_Values.iCurrentDeg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
       Release ( MutexCmps );
 
-      Wait(SU_Values.iInterval);
+      Wait( SU_Values.iInterval );
    }
 }
 
@@ -244,4 +253,142 @@ task SU_ReadSensors()
    );
 }
 
+int SU_PosCalibration( byte xpos, byte ypos, short orientation )
+{
+
+    byte tmpx = xpos;
+	byte tmpy = ypos;
+	byte FieldRange_front = 0;
+	byte FieldRange_back = 0;
+	byte obstacle_front = 0;
+	byte obstacle_back = 0;
+
+	if ( FIELD_SIZE >= SU_Values.iDistance_Front /* && !drehen */ )	// Übergabe ob Drehen oder Fahren
+	{
+
+		// Something went wrong throw stop event!!
+
+
+	}
+    else if ( SU_SONIC_RADIUS >= SU_Values.iDistance_Front || SU_SONIC_RADIUS >= SU_Values.iDistance_Back )
+    {
+        if ( 0 == orientation || 180 == orientation )
+        {
+            while ( true )
+            {
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy-- + xpos] )
+				{
+					tmpy++;
+					if ( 0 == orientation )
+					{
+						obstacle_front = 1;
+						FieldRange_front = ( ypos - tmpy ); // * FIELD_SIZE;
+					}
+					else if ( 180 == orientation )
+					{
+						obstacle_back = 1;
+						FieldRange_back = ( ypos - tmpy ); // * FIELD_SIZE;
+					}
+                    break;
+				}
+            }
+
+            while ( true )
+            {
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy++ + xpos] )
+				{
+					tmpy--;
+					if ( 0 == orientation )
+					{
+						obstacle_back = 1;
+						FieldRange_back = ( ypos - tmpy ); // * FIELD_SIZE;
+					}
+					else if ( 180 == orientation )
+					{
+						obstacle_front = 1;
+						FieldRange_front = ( ypos - tmpy ); // * FIELD_SIZE;
+					}
+                    break;
+				}
+            }
+        }
+
+        if ( 90 == orientation || 270 == orientation )
+        {
+            while ( true )
+            {
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx--] )
+				{
+					xpos++;
+					if ( 90 == orientation )
+					{
+						obstacle_back = 1;
+						FieldRange_back = ( xpos - tmpx ); // * FIELD_SIZE;
+					}
+					else if (270 == orientation )
+					{
+						obstacle_front = 1;
+						FieldRange_front = ( xpos - tmpx ); // * FIELD_SIZE;
+					}
+                    break;
+				}
+            }
+
+            while ( true )
+            {
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx++] )
+				{
+					xpos--;
+					if ( 90 == orientation )
+					{
+						obstacle_front = 1;
+						FieldRange_front = ( xpos - tmpx ); // * FIELD_SIZE;
+					}
+					else if ( 270 == orientation )
+					{
+						obstacle_back = 1;
+						FieldRange_back = ( xpos - tmpx ); // * FIELD_SIZE;
+					}
+                    break;
+				}
+            }
+
+        }
+
+		if ( SU_SONIC_RADIUS >= ( FieldRange_front * FIELD_SIZE ) )
+		{
+
+
+
+
+
+		}
+		else if ( SU_SONIC_RADIUS >= ( FieldRange_back * FIELD_SIZE ) )
+		{
+
+
+
+
+
+		}
+		else if ( SU_SONIC_RADIUS <= ( FieldRange_front * FIELD_SIZE ) )
+		{
+			//SU_Values.iDistance_Front
+		}
+
+		else if ( SU_SONIC_RADIUS <= ( FieldRange_back * FIELD_SIZE ) )
+		{
+
+		}
+		
+		//SU_OldDir = SU_Values.iDistance_Front;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 #endif
+
+
