@@ -1,19 +1,26 @@
-#include "FileIO.nxc"
+#include "PathfinderModule.nxc"
 
 task main()
 {
-     FileIO_initWorkField();
-     
+     PathFinder_init();
+     PathFinder_annotateMap('3');
+
+     PathFinder_searchWay();
+     ClearScreen();
      for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
          for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
          {
                char symbol[2];
                symbol[1] = 0;
-               symbol[0] = g_MapModule_WorkField.map[y][x];
+               symbol[0] = g_PathFinder_RoadMap.map[14*y+x];
 
-               TextOut(x, y*8,ByteArrayToStr(symbol));
+               TextOut(x*8, y*8,ByteArrayToStr(symbol));
+               Wait(10);
          }
      }
+
+
+
 };
 

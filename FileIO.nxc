@@ -4,6 +4,7 @@
 #include "MapModule.nxc"
 
 #define FILE_IO_FILE_NAME "Arbeitsfeld.txt"
+//#define FILE_IO_DEBUG
 
 byte FileIO_fileHandle;
 
@@ -21,16 +22,32 @@ void FileIO_exception(unsigned int returnCode)
 
 void FileIO_readMap(MapModule_Map& inMap)
 {
+#ifdef FILE_IO_DEBUG
+    string message = "start Read Map";
+    TextOut(0,LCD_LINE7, message);
+    Wait(1000);
+#endif /* FILE_IO_DEBUG */
      unsigned int readlength = GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH;
      unsigned int rtn_code = ReadBytes(FileIO_fileHandle,readlength,inMap.map);
      if(rtn_code != LDR_SUCCESS)
      {
             FileIO_exception(rtn_code);
      }
+#ifdef FILE_IO_DEBUG
+    string message = "start Read Done";
+    TextOut(0,LCD_LINE7, message);
+    Wait(1000);
+#endif /* FILE_IO_DEBUG */
 }
 
 void FileIO_initWorkField()
 {
+#ifdef FILE_IO_DEBUG
+    string message = "init FileIO";
+    TextOut(0,LCD_LINE7, message);
+    Wait(1000);
+#endif /* FILE_IO_DEBUG */
+
      unsigned int file_size = GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH;
      FileIO_fileHandle = 0;
      unsigned int rtn_code = OpenFileRead(FILE_IO_FILE_NAME, file_size, FileIO_fileHandle);
