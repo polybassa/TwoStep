@@ -38,12 +38,12 @@ unsigned short CU_CalibCompassValue( short orientation, short Offset );
 short CU_GetAzimuth( short degree );
 
 
-/* Function: CU_GetAzimuthPositve
+/* Function: CU_GetAzimuthPositive
 	- Calculates the difference in degrees between target and actual state to change the direction of the robot
 	- Needs the value of CU_CalibCompassValue( orientation, SU_InitCompassValue )
 	- Returns olny postive numbers
 */
-short CU_GetAzimuthPositve( short degree );
+short CU_GetAzimuthPositive( short degree );
 
 
 /* Function: CU_Measuring_front
@@ -140,7 +140,7 @@ unsigned short CU_CalibCompassValue( short orientation, short Offset )
 	return help;
 }
 
-short CU_GetAzimuthPositve( short degree )
+short CU_GetAzimuthPositive( short degree )
 {
 	if ( degree < SU_Values.iCurrentDeg)
 		return SU_Values.iCurrentDeg - degree;
@@ -150,7 +150,7 @@ short CU_GetAzimuthPositve( short degree )
 
 short CU_GetAzimuth( short degree )
 {
-	short tempdeg = degree - SU_Values.iCurrentDeg;
+	short tmpdeg = degree - SU_Values.iCurrentDeg;
 
 	if ( 180 < tmpdeg )
 		tmpdeg -= 360;
