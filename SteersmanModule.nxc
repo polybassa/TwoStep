@@ -1,0 +1,111 @@
+#ifndef __STEERSMAN_MODULE__
+#define __STEERSMAN_MODULE__
+
+/*******************************
+ * Steersman Module
+ *
+ * author: Nils Weiss
+ * *****************************/
+
+/*******************************
+ * Information:
+ *******************************/
+
+
+/*******************************
+ * Includes
+ *******************************/
+
+#include "PathfinderModule.nxc"
+#include "MotorUnit.nxc"
+
+/******************************
+ * Defines:
+ ******************************/
+
+/*******************************
+ * Declaration
+ *******************************/
+
+ //uses unsigned byte PathFinder_timeTableWritePointer;
+ //uses PathFinder_timeTableEntry PathFinder_timeTable[];
+ byte Steersman_timeTableReadPointer;
+ 
+ task Steersman_controlTask(void);
+ void Steersman_exception(void);
+ void Steersman_init(void);
+
+/******************************
+ * Debugs
+ * using LCD
+ ******************************/
+
+ #define Steersman_DEBUG
+ #define Steersman_FEEDBACK
+ #define Steersman_SEKTORLENGTH_IN_CM 25
+ #define Steersman_TARGET '3'
+
+/*******************************
+ *Functions and tasks
+ *******************************/
+
+void Steersman_exception(void)
+{
+     TextOut(0, LCD_LINE1, "Steersman exception!");
+     PlayTone(TONE_C5, SEC_1);
+     Wait(5000);
+     Stop(true);
+}
+
+
+void Steersman_init(void)
+{
+     PathFinder_init();
+     PathFinder_annotateMap(Steersman_TARGET);
+     PathFinder_searchWay();
+     Steersman_timeTableReadPointer = 0;
+     StartTask(Steersman_controlTask);
+}
+
+task Steersman_controlTask(void)
+{
+     while(true)
+     {
+         PathFinder_timeTableEntry currentEntry = PathFinder_timeTable[Steersman_timeTableReadPointer];
+
+         //AUSGLEICHSAKTIVITÄT
+
+         switch(currentEntry.activity)
+         {
+              case 'D':
+              {
+                  long cmToDrive = currentEntry.parameter * Steersman_SEKTORLENGTH_IN_CM;
+                  MU_driveForward(cmToDrive);
+              } break;
+              case 'T':
+              {
+                  MU_drehen_by_angle(currentEntry.parameter);
+              } break;
+              default: Steersman_exception();
+         }
+         
+         //ZIELERKENNUNG
+
+         if(Steersman_timeTableReadPointer < PathFinder_timeTableWritePointer)
+         {
+             Steersman_timeTableReadPointer++;
+         }
+         else break;
+     }
+     
+#ifdef Steersman_FEEDBACK
+	     PlayTone(100,50);
+#endif /* Steersman_FEEDBACK */
+
+       TextOut(0, LCD_LINE3, "Finish Steersman_controlTask");
+       PlayTone(TONE_C5, SEC_1);
+       Wait(5000);
+       Stop(true);
+}
+
+#endif

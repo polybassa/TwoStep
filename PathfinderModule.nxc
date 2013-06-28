@@ -42,7 +42,6 @@
 MapModule_Map g_PathFinder_RoadMap;
 PathFinder_timeTableEntry PathFinder_timeTable[PathFinder_MAX_NUMBER_OF_TIME_TABLE_ENTRIES];
 unsigned byte PathFinder_timeTableWritePointer;
-unsigned byte PathFinder_timeTableReadPointer;
 unsigned short PathFinder_currentOrientation;
 
 void PathFinder_init(void);
