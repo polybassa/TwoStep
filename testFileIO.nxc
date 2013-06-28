@@ -1,12 +1,10 @@
-#include "PathfinderModule.nxc"
+#include "SteersmanModule.nxc"
 
 task main()
 {
-     PathFinder_init();
-     PathFinder_annotateMap('3');
-
-     PathFinder_searchWay();
-     ClearScreen();
+     Steersman_init();
+     //ClearScreen();
+     /*
      for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
          for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
@@ -18,7 +16,7 @@ task main()
                TextOut(x*8, y*8,ByteArrayToStr(symbol));
                Wait(10);
          }
-     }
+     }  */
 
 
 

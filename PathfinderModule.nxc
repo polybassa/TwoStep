@@ -47,7 +47,7 @@ unsigned short PathFinder_currentOrientation;
 void PathFinder_init(void);
 void PathFinder_annotateMap(const byte target);
 void PathFinder_searchWay(void);
-void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const short orientation, const unsigned short destinationOrientation);
+void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const unsigned short destinationOrientation);
 void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const short orientation, const char activity, const short activityParameter);
 byte max(const byte v1, const byte v2);
 
@@ -56,7 +56,7 @@ byte max(const byte v1, const byte v2);
  * using LCD
  ******************************/
  
- #define Pathfinder_DEBUG
+ //#define Pathfinder_DEBUG
  #define Pathfinder_FEEDBACK	
 
 /*******************************
@@ -74,7 +74,6 @@ void PathFinder_init(void)
     FileIO_initWorkField();
     memcpy(g_PathFinder_RoadMap.map, g_MapModule_WorkField.map, GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH);
     PathFinder_timeTableWritePointer = 0;
-    PathFinder_timeTableReadPointer = 0;
     PathFinder_currentOrientation = PathFinder_INITIAL_ORIENTATION_OF_ROBOT;
 }
 
@@ -98,7 +97,7 @@ void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const shor
 
     PathFinder_timeTable[PathFinder_timeTableWritePointer].xPosition = xPos;
     PathFinder_timeTable[PathFinder_timeTableWritePointer].yPosition = yPos;
-    PathFinder_timeTable[PathFinder_timeTableWritePointer].yPosition = yPos;
+    PathFinder_timeTable[PathFinder_timeTableWritePointer].activity = activity;
     PathFinder_timeTable[PathFinder_timeTableWritePointer].orientation = orientation;
     PathFinder_timeTable[PathFinder_timeTableWritePointer].parameter = activityParameter;
 
@@ -179,25 +178,25 @@ void PathFinder_annotateMap(const byte target)
      }
 }
 
-void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const short orientation, const unsigned short destinationOrientation)
+void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const unsigned short destinationOrientation)
 {
     int rotation = destinationOrientation - PathFinder_currentOrientation;
     PathFinder_currentOrientation = destinationOrientation;
 
     if(abs(rotation) <= 180)
     {
-        PathFinder_writeTimeTableEntry(x_Pos, y_Pos, orientation, 'T', rotation);
+        PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'T', rotation);
         return;
     }
     rotation = 180 - rotation;
     if(abs(rotation) < 360)
     {
-        PathFinder_writeTimeTableEntry(x_Pos, y_Pos, orientation, 'T', rotation);
+        PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'T', rotation);
         return;
     }
     
     rotation = rotation - 360;
-    PathFinder_writeTimeTableEntry(x_Pos, y_Posn, orientation, 'T', rotation);
+    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'T', rotation);
 }
 
 void PathFinder_searchWay(void)

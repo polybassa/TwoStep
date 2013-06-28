@@ -17,7 +17,7 @@
  *******************************/
 
 #include "PathfinderModule.nxc"
-#include "MotorUnit.nxc"
+#include "MotorUnit_TEST.nxc"
 
 /******************************
  * Defines:
@@ -65,14 +65,15 @@ void Steersman_init(void)
      PathFinder_searchWay();
      Steersman_timeTableReadPointer = 0;
      StartTask(Steersman_controlTask);
+
 }
+
+#define currentEntry PathFinder_timeTable[Steersman_timeTableReadPointer]
 
 task Steersman_controlTask(void)
 {
      while(true)
      {
-         PathFinder_timeTableEntry currentEntry = PathFinder_timeTable[Steersman_timeTableReadPointer];
-
          //AUSGLEICHSAKTIVITÄT
 
          switch(currentEntry.activity)
@@ -90,12 +91,12 @@ task Steersman_controlTask(void)
          }
          
          //ZIELERKENNUNG
-
-         if(Steersman_timeTableReadPointer < PathFinder_timeTableWritePointer)
+         
+         Steersman_timeTableReadPointer++;
+         if(Steersman_timeTableReadPointer >= PathFinder_timeTableWritePointer)
          {
-             Steersman_timeTableReadPointer++;
+             break;
          }
-         else break;
      }
      
 #ifdef Steersman_FEEDBACK
