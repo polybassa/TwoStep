@@ -46,7 +46,7 @@ unsigned short PathFinder_currentOrientation;
 
 void PathFinder_init(void);
 void PathFinder_annotateMap(const byte target);
-void PathFinder_searchWay(void);
+void PathFinder_searchWay(const char startPosition);
 void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const unsigned short destinationOrientation);
 void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const short orientation, const char activity, const short activityParameter);
 byte max(const byte v1, const byte v2);
@@ -72,8 +72,7 @@ byte max(const byte v1, const byte v2)
 void PathFinder_init(void)
 {
     FileIO_initWorkField();
-    memcpy(g_PathFinder_RoadMap.map, g_MapModule_WorkField.map, GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH);
-    PathFinder_timeTableWritePointer = 0;
+    
     PathFinder_currentOrientation = PathFinder_INITIAL_ORIENTATION_OF_ROBOT;
 }
 
@@ -88,7 +87,7 @@ void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const shor
     string message = StrCat(
                         FormatNum( "En:%x", xPos),
                         FormatNum( ":%x:", yPos),
-                        FormatNum( "%d°=", orientation),
+                        FormatNum( "%dÂ°=", orientation),
                         FormatNum( "%c->", activity),
                         FormatNum( "%d", activityParameter));
     TextOut(0,LCD_LINE6, message);
@@ -116,6 +115,9 @@ void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const shor
 
 void PathFinder_annotateMap(const byte target)
 {
+     //Lade Arbeitsfeld
+     memcpy(g_PathFinder_RoadMap.map, g_MapModule_WorkField.map, GLOBAL_MAP_HEIGHT * GLOBAL_MAP_WIDTH);
+     
      for(int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
              for(int x = 0; x < GLOBAL_MAP_WIDTH; x++)
@@ -199,14 +201,16 @@ void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y
     PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'T', rotation);
 }
 
-void PathFinder_searchWay(void)
+void PathFinder_searchWay(const char startPosition)
 {
+     PathFinder_timeTableWritePointer = 0;
+     
      unsigned int x_Pos, y_Pos;
 	 for(unsigned int y = 0; y < GLOBAL_MAP_HEIGHT; y++)
      {
 		   for(unsigned int x = 0; x < GLOBAL_MAP_WIDTH; x++)
            {
-				if(g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y + x] == 'S') {x_Pos = x; y_Pos = y;};
+				if(g_PathFinder_RoadMap.map[GLOBAL_MAP_HEIGHT * y + x] == startPosition) {x_Pos = x; y_Pos = y;};
            }
 	}
 		 
@@ -236,7 +240,7 @@ void PathFinder_searchWay(void)
               
                 if(current >= next || next == '#')
                 {
-                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 270, 'D', steps);
+                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'D', steps);
                     steps = 0;
                     break;
                 }
@@ -258,7 +262,7 @@ void PathFinder_searchWay(void)
               
                 if(current >= next || next == '#')
                 {
-                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 90, 'D', steps);
+                    PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'D', steps);
                     steps = 0;
                     break;
                 }
@@ -280,7 +284,7 @@ void PathFinder_searchWay(void)
               
                 if(current >= next || next == '#')
                 {
-                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 0, 'D', steps);
+                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'D', steps);
                    steps = 0;
                    break;
                 }
@@ -302,7 +306,7 @@ void PathFinder_searchWay(void)
               
                 if(current >= next || next == '#')
                 {
-                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, 180, 'D', steps);
+                   PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'D', steps);
                    steps = 0;
                    break;
                 }
