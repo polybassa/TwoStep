@@ -1,0 +1,271 @@
+#ifndef __CALIB_MODULE__
+#define __SCALIB_MODULE__
+
+// Includes only for testing purposes
+/*
+#include "SensorModule.nxc"
+#include "MotorUnit.nxc"
+*/
+//******************************************************
+// Calibration Module
+//
+// Authors: Alexander Strobl, Daniel Tatzel
+//******************************************************
+
+//******************************************************
+// Declarations
+//******************************************************
+
+// Compass reference value used for calibration
+short CU_TempCompassRef = -1;
+
+/* Function: CU_CalibCompassValue
+	- Matches the virtual direction and the real direction to get the difference between target state and actual state
+	- Variables:
+		- orientation: virtuel direction on the map
+		- Offset: Difference between virtual and real direction
+*/
+unsigned short CU_CalibCompassValue( short orientation, short Offset );
+
+/* Function: CU_GetAzimuth
+	- Calculates the difference in degrees between target and actual state to change the direction of the robot
+	- Needs the value of CU_CalibCompassValue( orientation, SU_InitCompassValue )
+*/
+short CU_GetAzimuth( short degree );
+
+/* Function: CU_Measuring_front
+	- Measures the distance to the next object to the front (only if in range)
+	- Adjusts the Position of the robot according to the distance between the object and robot
+*/
+void CU_Measuring_front( byte FieldRange_front );
+
+/* Function: CU_Measuring_rear
+	- Measures the distance to the next object to the rear (only if in range)
+	- Adjusts the Position of the robot according to the distance between the object and robot
+*/
+void CU_Measuring_rear( byte FieldRange_rear);
+
+/* Function: CU_PosCalibration
+	- Must be started from the control unit
+	- Needs: actual x and y coordiante and orientation of the robot
+	- Calls all other funtctions
+	- Checks:
+		- Deviation
+		- Looks for the next obstacle to the front and rear (uses virtual map and actual position)
+		- Corrects the alignment of the robot to the actual virtual orientation (on the map)
+		- Measures distances
+*/
+int CU_PosCalibration( byte xpos, byte ypos, short orientation );
+
+//******************************************************
+// Defines
+//******************************************************
+
+#define CU_CriticalDistance 20
+
+//******************************************************
+// Definitions
+//******************************************************
+
+
+
+//******************************************************
+// Functions and tasks
+//******************************************************
+
+task CU_CheckObstacle( )
+{
+	while ( true )
+	{
+		if ( CU_CriticalDistance >= SU_Values.iDistance_Front )
+		{
+
+			// Something went wrong throw stop event!!
+
+
+		}
+
+	}
+}
+
+
+unsigned short CU_CalibCompassValue( short orientation, short Offset )
+{
+	int help = orientation + Offset;
+
+	if ( help >= 360 )
+		help -= 360;
+
+	if ( help < 0 )
+		help += 360;
+
+	return help;
+}
+
+short CU_GetAzimuth( short degree )
+{
+	return degree - 360 - SU_Values.iCurrentDeg;
+}
+
+void CU_Measuring_front( byte FieldRange_front )
+{
+		// Pruefen ob Hindernis in Reichweite ist
+		if ( ( FieldRange_front * GLOBAL_1_SEKTOR ) >= SU_SONIC_RADIUS )
+		{
+			until(!MutexUSonic);
+			SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
+
+			
+			// Verarbeitung Starten (Bedenken: Wird Rueckgabewert bedingt? Wenn ja, diese Funktion trennen, wegen Rueckgabewerte
+			if ( SU_Values.iDistance_Front < ( FieldRange_front * GLOBAL_1_SEKTOR ) )
+			{
+				// Zu weit vorne 
+				MU_drive_backward( ( ( FieldRange_front * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_front ), false);
+			}
+			else if ( SU_Values.iDistance_Front > ( FieldRange_front * GLOBAL_1_SEKTOR ) )
+			{
+				// Zu weit hinten
+				
+				MU_drive_forward( ( SU_Values.iDistance_Front - ( FieldRange_front * GLOBAL_1_SEKTOR ) ), false);
+			}
+		}
+}
+
+void CU_Measuring_rear( byte FieldRange_rear)
+{
+		if ( ( FieldRange_rear * GLOBAL_1_SEKTOR ) >= SU_SONIC_RADIUS )
+		{
+			until(!MutexUSonic);
+			SU_Values.iDistance_Back = SensorUS ( SU_SONIC_BACK );
+
+			if ( SU_Values.iDistance_Back > ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
+			{
+				// Zu weit vorne 
+				MU_drive_backward( ( ( FieldRange_rear * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_front ), false);
+			}
+			else if ( SU_Values.iDistance_Back < ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
+			{
+				// Zu weit hinten
+				MU_drive_forward( ( SU_Values.FieldRange_rear - ( FieldRange_rear * GLOBAL_1_SEKTOR ) ), false);
+			}
+		}
+}
+
+int CU_PosCalibration( byte xpos, byte ypos, short orientation )
+{
+    byte tmpx = xpos;
+	byte tmpy = ypos;
+	byte FieldRange_front = 0;
+	byte FieldRange_rear = 0;
+	short deviation;
+
+		if ( ( -1 < CU_TempCompassRef )  )
+		{
+			if ( 90 > CU_GetAzimuth( deviation ) )
+			{
+				// Do stuff and things
+			
+			}
+		}
+
+		if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
+        {
+            while ( true )
+            {
+				tmpy--;
+                if ( g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] == '#')
+				{
+					tmpy++;
+					if ( 0 == orientation )
+					{
+						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+					}
+					else if ( 180 == orientation )
+					{
+						FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+					}
+                    break;
+				}
+            }
+
+            while ( true )
+            {
+				tmpy++;
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] )
+				{
+					tmpy--;
+					if ( 0 == orientation )
+					{
+						FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+					}
+					else if ( 180 == orientation )
+					{
+						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+					}
+                    break;
+				}
+				
+            }
+        }
+
+        if ( 90 == orientation || 270 == orientation ) // Ost & West Ausrichtung
+        {
+            while ( true )
+            {
+				tmpx--;
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+				{
+					xpos++;
+					if ( 90 == orientation )
+					{
+						FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+					}
+					else if (270 == orientation )
+					{
+						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+					}
+                    break;
+				}
+				
+            }
+
+            while ( true )
+            {
+				tmpx++;
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+				{
+					xpos--;
+					if ( 90 == orientation )
+					{
+						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+					}
+					else if ( 270 == orientation )
+					{
+						FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+					}
+                    break;
+				}
+				
+            }
+
+        }
+
+
+		unsigned short degree = CU_CalibCompassValue( orientation, SU_InitCompassValue );
+
+		if ( degree != SU_Values.iCurrentDeg )
+		{
+			short degreetoturn = CU_GetAzimuth( degree );
+
+			MU_drehen_by_angle( degreetoturn );
+		}
+
+		CU_Measuring_front( FieldRange_front );
+		CU_Measuring_rear( FieldRange_rear );
+
+		
+		
+		CU_TempCompassRef = SU_Values.iCurrentDeg;
+}
+
+#endif
