@@ -18,6 +18,7 @@
 
 #include "PathfinderModule.nxc"
 #include "MotorUnit_TEST.nxc"
+#include "SensorModule.nxc"
 
 /******************************
  * Defines:
@@ -61,9 +62,7 @@ void Steersman_exception(void)
 void Steersman_init(void)
 {
      PathFinder_init();
-     PathFinder_annotateMap(Steersman_TARGET);
-     PathFinder_searchWay();
-     Steersman_timeTableReadPointer = 0;
+     
      StartTask(Steersman_controlTask);
 
 }
@@ -72,9 +71,13 @@ void Steersman_init(void)
 
 task Steersman_controlTask(void)
 {
+     //Fahrplan von S nach -> Steersman_Target erstellen
+     PathFinder_annotateMap(Steersman_TARGET);
+     PathFinder_searchWay('S');
+     Steersman_timeTableReadPointer = 0;
      while(true)
      {
-         //AUSGLEICHSAKTIVITÄT
+         SU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
 
          switch(currentEntry.activity)
          {
@@ -99,14 +102,47 @@ task Steersman_controlTask(void)
          }
      }
      
+     //ZIELFINDUNG
+     
 #ifdef Steersman_FEEDBACK
 	     PlayTone(100,50);
 #endif /* Steersman_FEEDBACK */
 
-       TextOut(0, LCD_LINE3, "Finish Steersman_controlTask");
-       PlayTone(TONE_C5, SEC_1);
-       Wait(5000);
-       Stop(true);
+    //GO HOME
+    //Fahrplan von Steersman_Target nach Startpositon erstellen
+    PathFinder_annotateMap('S');
+    PathFinder_searchWay(Steersman_TARGET);
+    Steersman_timeTableReadPointer = 0;
+    
+     while(true)
+     {
+         //AUSGLEICHSAKTIVITÃ„T
+
+         switch(currentEntry.activity)
+         {
+              case 'D':
+              {
+                  long cmToDrive = currentEntry.parameter * Steersman_SEKTORLENGTH_IN_CM;
+                  MU_driveForward(cmToDrive);
+              } break;
+              case 'T':
+              {
+                  MU_drehen_by_angle(currentEntry.parameter);
+              } break;
+              default: Steersman_exception();
+         }
+              
+         Steersman_timeTableReadPointer++;
+         if(Steersman_timeTableReadPointer >= PathFinder_timeTableWritePointer)
+         {
+             break;
+         }
+     }
+
+    TextOut(0, LCD_LINE3, "Finish Steersman_controlTask");
+    PlayTone(TONE_C5, SEC_1);
+    Wait(5000);
+    Stop(true);
 }
 
 #endif
