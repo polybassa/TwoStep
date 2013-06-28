@@ -7,13 +7,12 @@
 // Authors: Alexander Strobl, Daniel Tatzel
 //******************************************************
 
-
-
 //******************************************************
 // Declarations
 //******************************************************
 
-short SU_OldDir = 0;
+short SU_TempCompassRef = 0;
+short SU_InitCompassValue = 0;
 
 // Different mutex to prevent reading while the values get updated
 mutex MutexColor;
@@ -84,6 +83,7 @@ task SU_CheckCompass();
 task SU_ReadSensors();
 
 
+
 //******************************************************
 // Includes
 //******************************************************
@@ -92,6 +92,7 @@ task SU_ReadSensors();
 #include "IMU-lib.nxc"
 
 #include "MapModule.nxc"
+
 
 
 //******************************************************
@@ -105,9 +106,6 @@ task SU_ReadSensors();
 #define SU_SONIC_BACK        	S4
 #define SU_SONIC_RADIUS			50
 
-// Schon irgendwo definiert?
-#define FIELD_SIZE
-
 // Turn display messages on / off
 #define SU_SENSOR_DEBUG
 
@@ -119,6 +117,7 @@ task SU_ReadSensors();
 // Struct
 _SU_Values SU_Values;
 
+//#include "MotorUnit.nxc"
 
 //******************************************************
 // Functions and tasks
@@ -165,6 +164,13 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
    Acquire( MutexCmps );
    IMU_Init(SU_COMPASS_SENSOR_PORT);
    SU_Values.iCurrentDeg = 0;
+
+   SU_InitCompassValue = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
+   if ( SU_InitCompassValue <= 180 )
+	SU_InitCompassValue += 180;
+   else
+	SU_InitCompassValue -= 180;
+
    Release( MutexCmps );
 
    // UltraSonic
@@ -254,6 +260,60 @@ task SU_ReadSensors()
    #endif /* SU_SENSOR_DEBUG */
    );
 }
+/*
+task SU_CheckObstacle( )
+{
+	while ( true )
+	{
+		if ( SU_CriticalDistance >= SU_Values.iDistance_Front )
+		{
+
+			// Something went wrong throw stop event!!
+
+
+		}
+
+	}
+}
+*/
+unsigned short SU_AddCompassValue( short orientation, short Offset )
+{
+	int help = orientation + Offset;
+
+	if ( help >= 360 )
+		help -= 360;
+
+	if ( help < 0 )
+		help += 360;
+
+	return help;
+}
+
+short SU_GetAzimuth( short degree )
+{
+	return degree - 360 - SU_Values.iCurrentDeg;
+}
+
+void SU_Measuring( byte FieldRange_front, byte FieldRange_back)
+{
+		// Pruefen ob Hindernis in Reichweite ist
+		if ( ( FieldRange_front * GLOBAL_1_SEKTOR ) >= SU_SONIC_RADIUS )
+		{
+			until(!MutexUSonic);
+			SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
+
+			// Verarbeitung Starten (Bedenken: Wird Rueckgabewert bedingt? Wenn ja, diese Funktion trennen, wegen Rueckgabewerte
+			//SU_Values.iDistance_Front;
+		}
+
+		if ( ( FieldRange_back * GLOBAL_1_SEKTOR ) >= SU_SONIC_RADIUS )
+		{
+			until(!MutexUSonic);
+			SU_Values.iDistance_Back = SensorUS ( SU_SONIC_BACK );
+
+			//SU_Values.iDistance_Back;
+		}
+}
 
 int SU_PosCalibration( byte xpos, byte ypos, short orientation )
 {
@@ -265,132 +325,116 @@ int SU_PosCalibration( byte xpos, byte ypos, short orientation )
 	byte obstacle_front = 0;
 	byte obstacle_back = 0;
 
-	if ( FIELD_SIZE >= SU_Values.iDistance_Front /* && !drehen */ )	// Übergabe ob Drehen oder Fahren
-	{
 
-		// Something went wrong throw stop event!!
-
-
-	}
-    else if ( SU_SONIC_RADIUS >= SU_Values.iDistance_Front || SU_SONIC_RADIUS >= SU_Values.iDistance_Back )
-    {
-        if ( 0 == orientation || 180 == orientation )
+		if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
         {
             while ( true )
             {
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy-- + xpos] )
+                if ( g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] == '#')
 				{
 					tmpy++;
 					if ( 0 == orientation )
 					{
 						obstacle_front = 1;
-						FieldRange_front = ( ypos - tmpy ); // * FIELD_SIZE;
+						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 					}
 					else if ( 180 == orientation )
 					{
 						obstacle_back = 1;
-						FieldRange_back = ( ypos - tmpy ); // * FIELD_SIZE;
+						FieldRange_back = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 					}
                     break;
 				}
+				tmpy--;
             }
 
             while ( true )
             {
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy++ + xpos] )
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] )
 				{
 					tmpy--;
 					if ( 0 == orientation )
 					{
 						obstacle_back = 1;
-						FieldRange_back = ( ypos - tmpy ); // * FIELD_SIZE;
+						FieldRange_back = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 					}
 					else if ( 180 == orientation )
 					{
 						obstacle_front = 1;
-						FieldRange_front = ( ypos - tmpy ); // * FIELD_SIZE;
+						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 					}
                     break;
 				}
+				++tmpy;
             }
         }
 
-        if ( 90 == orientation || 270 == orientation )
+        if ( 90 == orientation || 270 == orientation ) // Ost & West Ausrichtung
         {
             while ( true )
             {
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx--] )
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
 				{
 					xpos++;
 					if ( 90 == orientation )
 					{
 						obstacle_back = 1;
-						FieldRange_back = ( xpos - tmpx ); // * FIELD_SIZE;
+						FieldRange_back = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
 					}
 					else if (270 == orientation )
 					{
 						obstacle_front = 1;
-						FieldRange_front = ( xpos - tmpx ); // * FIELD_SIZE;
+						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
 					}
                     break;
 				}
+				--tmpx;
             }
 
             while ( true )
             {
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx++] )
+                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
 				{
 					xpos--;
 					if ( 90 == orientation )
 					{
 						obstacle_front = 1;
-						FieldRange_front = ( xpos - tmpx ); // * FIELD_SIZE;
+						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
 					}
 					else if ( 270 == orientation )
 					{
 						obstacle_back = 1;
-						FieldRange_back = ( xpos - tmpx ); // * FIELD_SIZE;
+						FieldRange_back = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
 					}
                     break;
 				}
+				++tmpx;
             }
 
         }
 
-		if ( SU_SONIC_RADIUS >= ( FieldRange_front * FIELD_SIZE ) )
+
+		unsigned short degree = SU_AddCompassValue( orientation, SU_InitCompassValue );
+
+		if ( degree != SU_Values.iCurrentDeg )
 		{
+			short degreetoturn = SU_GetAzimuth( degree );
 
-
-
-
-
-		}
-		else if ( SU_SONIC_RADIUS >= ( FieldRange_back * FIELD_SIZE ) )
-		{
-
-
-
-
-
-		}
-		else if ( SU_SONIC_RADIUS <= ( FieldRange_front * FIELD_SIZE ) )
-		{
-			//SU_Values.iDistance_Front
+			MU_drehen_by_angle( degreetoturn );
 		}
 
-		else if ( SU_SONIC_RADIUS <= ( FieldRange_back * FIELD_SIZE ) )
-		{
+		SU_Measuring( FieldRange_front, FieldRange_back );
 
-		}
-		
-		//SU_OldDir = SU_Values.iDistance_Front;
-    }
-    else
-    {
-        return 0;
-    }
+
+
+
+
+
+
+		//SU_TempCompassRef
 }
 
 #endif
+
 
 
