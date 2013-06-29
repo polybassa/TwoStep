@@ -1,11 +1,13 @@
 #ifndef __CALIB_MODULE__
-#define __SCALIB_MODULE__
+#define __CALIB_MODULE__
 
-// Includes only for testing purposes
+// Includes only for testing purposes. Must be in this order in the main file
 /*
 #include "SensorModule.nxc"
 #include "MotorUnit.nxc"
+// #include "CalibModule.nxc"
 */
+
 //******************************************************
 // Calibration Module
 //
@@ -19,6 +21,7 @@
 // Compass reference value used for calibration
 short CU_TempCompassRef = -1;
 
+
 /* Function: CU_CalibCompassValue
 	- Matches the virtual direction and the real direction to get the difference between target state and actual state
 	- Variables:
@@ -27,11 +30,21 @@ short CU_TempCompassRef = -1;
 */
 unsigned short CU_CalibCompassValue( short orientation, short Offset );
 
+
 /* Function: CU_GetAzimuth
 	- Calculates the difference in degrees between target and actual state to change the direction of the robot
 	- Needs the value of CU_CalibCompassValue( orientation, SU_InitCompassValue )
 */
 short CU_GetAzimuth( short degree );
+
+
+/* Function: CU_GetAzimuthPositive
+	- Calculates the difference in degrees between target and actual state to change the direction of the robot
+	- Needs the value of CU_CalibCompassValue( orientation, SU_InitCompassValue )
+	- Returns olny postive numbers
+*/
+short CU_GetAzimuthPositive( short degree );
+
 
 /* Function: CU_Measuring_front
 	- Measures the distance to the next object to the front (only if in range)
@@ -39,11 +52,25 @@ short CU_GetAzimuth( short degree );
 */
 void CU_Measuring_front( byte FieldRange_front );
 
+
 /* Function: CU_Measuring_rear
 	- Measures the distance to the next object to the rear (only if in range)
 	- Adjusts the Position of the robot according to the distance between the object and robot
 */
-void CU_Measuring_rear( byte FieldRange_rear);
+void CU_Measuring_rear( byte FieldRange_rear );
+
+
+/* Function: CU_TurnToOrientation
+	- Aligns the robot to the driving direction
+*/
+void CU_TurnToOrientation( short orientation );
+
+
+/* Function: CU_Drift
+	- Calculates if the robot drifted to the right or left after driving
+*/
+void CU_Drift( short orientation );
+
 
 /* Function: CU_PosCalibration
 	- Must be started from the control unit
@@ -57,11 +84,14 @@ void CU_Measuring_rear( byte FieldRange_rear);
 */
 int CU_PosCalibration( byte xpos, byte ypos, short orientation );
 
+
 //******************************************************
 // Defines
 //******************************************************
 
+// Should be adjusted, just first idea
 #define CU_CriticalDistance 20
+
 
 //******************************************************
 // Definitions
@@ -79,12 +109,20 @@ task CU_CheckObstacle( )
 	{
 		if ( CU_CriticalDistance >= SU_Values.iDistance_Front )
 		{
-
 			// Something went wrong throw stop event!!
-
-
+			
+			// Idea:
+			// Check if it is an expected Wall. If not throw stop event. If expected than do nothing
+			/* if ( Wall != expected )
+			{
+				throw stop event;
+				call CU_Drift();
+				search possible wall on map;
+				tell MotorUNit how to adjust;
+				delete stop event;
+			}
+			*/
 		}
-
 	}
 }
 
@@ -93,18 +131,31 @@ unsigned short CU_CalibCompassValue( short orientation, short Offset )
 {
 	int help = orientation + Offset;
 
-	if ( help >= 360 )
+	if ( 360 <= help )
 		help -= 360;
 
-	if ( help < 0 )
+	if ( 0 > help )
 		help += 360;
 
 	return help;
 }
 
+short CU_GetAzimuthPositive( short degree )
+{
+	if ( degree < SU_Values.iCurrentDeg)
+		return SU_Values.iCurrentDeg - degree;
+	if ( degree > SU_Values.iCurrentDeg)
+		return degree + SU_Values.iCurrentDeg;
+}
+
 short CU_GetAzimuth( short degree )
 {
-	return degree - 360 - SU_Values.iCurrentDeg;
+	short tmpdeg = degree - SU_Values.iCurrentDeg;
+
+	if ( 180 < tmpdeg )
+		tmpdeg -= 360;
+		
+	return tmpdeg;
 }
 
 void CU_Measuring_front( byte FieldRange_front )
@@ -151,23 +202,53 @@ void CU_Measuring_rear( byte FieldRange_rear)
 		}
 }
 
+void CU_TurnToOrientation( short orientation )
+{
+		unsigned short degree = CU_CalibCompassValue( orientation, SU_InitCompassValue );
+
+		if ( degree != SU_Values.iCurrentDeg )
+		{
+			short degreetoturn = CU_GetAzimuth( degree );
+
+			MU_drehen_by_angle( degreetoturn );
+		}
+}
+
+void CU_Drift( short orientation )
+{
+		if ( ( -1 != CU_TempCompassRef )  )
+		{
+			if ( 80 > CU_GetAzimuthPositive( CU_TempCompassRef ) )
+			{
+				short side = CU_GetAzimuth( CU_TempCompassRef ) * (  -1 );
+				
+				CU_TurnToOrientation( orientation );
+				
+				// Left
+				if ( 0 > side )
+				{
+					// Do stuff and things
+				
+				}
+				else if ( 0 < side )	// Right
+				{
+					// Do stuff and things
+				
+				}
+			}
+		}
+
+}
+
 int CU_PosCalibration( byte xpos, byte ypos, short orientation )
 {
     byte tmpx = xpos;
 	byte tmpy = ypos;
 	byte FieldRange_front = 0;
 	byte FieldRange_rear = 0;
-	short deviation;
 
-		if ( ( -1 < CU_TempCompassRef )  )
-		{
-			if ( 90 > CU_GetAzimuth( deviation ) )
-			{
-				// Do stuff and things
-			
-			}
-		}
-
+		CU_Drift( orientation );
+		
 		if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
         {
             while ( true )
@@ -204,7 +285,6 @@ int CU_PosCalibration( byte xpos, byte ypos, short orientation )
 					}
                     break;
 				}
-				
             }
         }
 
@@ -251,21 +331,12 @@ int CU_PosCalibration( byte xpos, byte ypos, short orientation )
         }
 
 
-		unsigned short degree = CU_CalibCompassValue( orientation, SU_InitCompassValue );
-
-		if ( degree != SU_Values.iCurrentDeg )
-		{
-			short degreetoturn = CU_GetAzimuth( degree );
-
-			MU_drehen_by_angle( degreetoturn );
-		}
+		CU_TurnToOrientation( orientation );
 
 		CU_Measuring_front( FieldRange_front );
 		CU_Measuring_rear( FieldRange_rear );
-
-		
 		
 		CU_TempCompassRef = SU_Values.iCurrentDeg;
 }
 
-#endif
+#endif /* __CALIB_MODULE__ */
