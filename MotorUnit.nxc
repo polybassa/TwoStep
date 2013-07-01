@@ -7,6 +7,8 @@
  * author: Florian Laufenböck
  * *****************************/
 
+
+
 /*******************************
  * Information:
  *******************************/
@@ -15,8 +17,8 @@
  // -> immer aufrunden oder immer abrunden?
 /*******************************
  * Beispielkarte der Umgebung:
-
-     0123456789ABCD
+ *
+     0123456789....
 	0##############
 	1#	  S	      #
 	2##   #####   #
@@ -27,10 +29,10 @@
 	7#	    #     #
 	8#   ##########
 	9#   #        #
-	A#   #   33   #
-	B#   #        #
-	C#            #
-	D##############
+	 #   #   33   #
+	 #   #        #
+	 #            #
+	 ##############
 	------------->x - koordinate
     und von up to down ist y-koordinate
     -> S = 5/1
@@ -62,7 +64,7 @@
  * short MU_sin_angle:		liefert den Winkel zurück, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zurück
  * float MU_distance:		liefert den abstand(luftlinie) zum Start zurück; benutzt dafür x-pos, y-pos
  */
-struct _MU_data
+/*struct _MU_data
 {
 	unsigned int MU_x_pos;
 	unsigned int MU_y_pos;
@@ -71,9 +73,9 @@ struct _MU_data
 	long MU_sin_angle;
 	float MU_distance;
 };
-
-bool global_someth_exist;	// globale Variable für die Tatsache, ob ein Getränk vorhanden ist
-long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
+*/
+//long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
+long global_winkel_todrive;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu können, damit ich immer bestimmte ° abfahre
 
 /* function: MU_drive_forward
  * gets: weg in cm der zurückgelegt werden muss
@@ -82,7 +84,7 @@ long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem 
  * liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
  * schmeißt am Ende der Ausführung ein Event, sodass der Tachometer gelöscht werden kann
  */
-bool MU_drive_forward(const short &cm, bool special_test = false);
+void MU_drive_forward(const short &cm);
 
 /* functin: MU_drive_backward
  * gets: weg in cm, der zurückgelegt werden soll
@@ -92,7 +94,7 @@ bool MU_drive_forward(const short &cm, bool special_test = false);
  *  liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
  * schmeißt am Ende der Ausführung ein Event, sodass der Tachometer gelöscht werden kann
  */
-bool MU_drive_backward(const short &cm, bool special_test = false);
+void MU_drive_backward(const short &cm);
 
 /* function: MU_drehen_by_angle
  * gets: den Winkel den er sich drehen soll(positiv oder negativ)
@@ -101,14 +103,7 @@ bool MU_drive_backward(const short &cm, bool special_test = false);
  *  liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
  * nach fertigem drehen wird der Tachocounter gelöscht!!!!
  */
-bool MU_drehen_by_angle(const short &angle);
-
-/* function: MU_drehen_by_degree
- * hier geht es darum,dass das Fahrzeug sich in einen bestimmten Winkel abhängig vom Kompass dreht
- * der Kompasswinkel sei 0, wenn das Fahrzeug in richtung positiver x-Richtung schaut
- * er entwickelt sich in richtung uhrzeigersinn
- */
-bool MU_drehen_by_degree(const short &degree);
+void MU_drehen_by_angle(const short &angle);
 
 /*function: MU_start_all_featurs
  * kriegt keine Variablen
@@ -116,37 +111,36 @@ bool MU_drehen_by_degree(const short &degree);
  * startet den Task MU_informations
  * liefert false zurück, sollte iwas nicht wie gewünscht laufen
  */
-bool MU_start_all_features();
+void MU_start_all_features();
 
-/* Task: MU_informations
- * wird einmal initial gestartet
- * legt die Daten der Odometrie einmal inital an und verwaltet diese
- * läuft in einer Endlosschleife
+/* Task: MU_motor1
+ * fährt mit Motor1 einen fest definierten Weg ab
  */
-task MU_informations();
+task MU_motor1();
+
+/* Task: MU_motor2
+ * fährt mit Motor2 einen fest definierten Weg ab
+ */
+task MU_motor2();
 
 
 /******************************
  * Defines:
  ******************************/
-#define MU_GLOBAL_X_0	6
-#define MU_GLOBLAL_Y_0	1
-#define MU_GLOBAL_ANGLE_0	0	// veränderbar, wenn der Roboter inital einmal hingestellt wurde
+
 #define GLOBAL_1_SEKTOR 25	// definition wie groß ein Sektor im Raum ist
 #define MU_GLOBAL_ANGLE_MOTOR 360	// Winkel, damit sich das Rad einmal dreht
 #define MU_GLOBAL_UMFANG 13.5	// umfang des Rades
 #define MU_GLOBAL_DRIVE1 (MU_GLOBAL_ANGLE_MOTOR / MU_GLOBAL_UMFANG) 	// Winkel um einen cm zurückzulegen
 #define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zurückzulegen
-#define MU_GLOBAL_MAXSPEED 75
-#define MU_GLOBAL_DEGREE_ONESTEP 50		// gibt die Grad an, die ich bei einer Umdrehung fahren will
-#define GLOBAL_MOTOR2 OUT_A
-#define GLOBAL_MOTOR1 OUT_C
+#define MU_GLOBAL_MAXSPEED 50
+#define MU_GLOBAL_DEGREE_ONESTEP 10		// gibt die Grad an, die ich bei einer Umdrehung fahren will
+#define GLOBAL_MOTOR1 OUT_A
+#define GLOBAL_MOTOR2 OUT_C
 #define GLOBAL_MOTOR12 OUT_AC
-#define MU_GLOBAL_STOPandGO 400		// fester Wert, den das Fahrzeug fürs Beschleunigen und Bremsen braucht
-#define MU_lokal_Beschleunigung (MU_GLOBAL_STOPandGO / MU_GLOBAL_DEGREE_ONESTEP);	// im moment bei 8, lass ma mal so
-#define MU_GLOBAL_MINSPEED 30
-
-#define MU_GLOBAL_FEHLERKORREKTUR	// bleibt erstmal unitialisiert, weil die Korrektur übern Kompass erstmal rausfliegt
+#define MU_GLOBAL_FEHLERKORREKTUR 7	// um wie viel Grad muss ich einen motor auf einer Seite bewegen, um den KompassSensor um 1 Grad zu korriegeren?
+#define MU_LOKAL_DIFFRENCE_MOTOR12 7	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
+#define MU_LOKAL_INSTEPS	67	
 
 /******************************
  * Debugs
@@ -154,220 +148,160 @@ task MU_informations();
  ******************************/
  #define MU_debug	// debug klausel
  #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach außen gegeben wird
+ #define MU_mitausgleich
 
 
 /*******************************
- * Timer and Events for the Motormodule	
+ * Timer and Events for the Motormodule
  ******************************/
-#define GLOBAL_EVENT_MU_READING 0x80	// sollte dieses Event gesetzt sein, dann dürfen Informationen ausgelesen werden, ist nur der Fall, wenn man geradeaus oder Rückwärts fährt
+#define GLOBAL_EVENT_MU_CANDRIVE1 0x80	// event, wenn motor1 fahren kann
+#define GLOBAL_EVENT_MU_CANDRIVE2 0x40	// event, wenn motor2 fahren kann
+#define GLOBAL_EVENT_MU_CANACT1   0x20	// event, wenn motor1 fertig ist mit fahren
+#define GLOBAL_EVENT_MU_CANACT2   0x10	// event,wenn motor2 fertig ist mit fahren
 
 
 /*******************************
  * Initialisation
  ******************************/
-_MU_data MU_data_info;
+
 
 /*******************************
  *Functions and tasks
  *******************************/
 
-bool MU_drehen_by_degree(const short &degree)
+void MU_drehen_by_angle(const short &angle)
 {
-	short difference = global_Dig0 - SU_Values.iCurrentDeg;	// erstmal die differenz auslesen, die mir fehlt
-	RotateMotorEx(GLOBAL_MOTOR12,10,(difference * MU_GLOBAL_FEHLERKORREKTUR),100,false,false);
-	ResetRotationCount(GLOBAL_MOTOR12);
+	// es gilt: ein positiver winkel bedeutet, dass der Robo sich im Uhrzeigersinn dreht, bedeutet in Fahrtrichtung nach rechts
+	// das wiederum bedeutet, dass der Roboter, um sich auf der Stelle zu drehen, den einen Motor in positiver Richtung
+	// und den anderen Motor in negativer Richtung ansteuern muss -> um im Uhrzeigersinn: MotorA negativ, MotorC positiv
+	// sonst andersrum
+	//	lösung vorerst: einfach mit RotateMotorEx und der geeigneteten Konstante versuchen das Ding zu drehen
+	// alternativ: Erst den einen Motor, dann den anderen Motor	(von den alternativen zu bevorzugen, wenns der robo so machen darf...)
+	// alterantiv2: über tasks, dann wird die ganze sache aber rel. kompliziert da vorzeichenwechsel und zwei globale variablen etc... 
+	RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MAXSPEED,angle,100,false,true);	// diese funktion muss man erst noch richtig testen
 }
 
-bool MU_drehen_by_angle(const short &angle)
+void MU_start_all_features()
 {
-	RotateMotorEx(GLOBAL_MOTOR12,10,angle,100,false,false);
-	ResetRotationCount(GLOBAL_MOTOR12);
+	Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
+	Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
+	Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
+	Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
+	StartTask(MU_motor1);
+	StartTask(MU_motor2);
+	Wait(10);
 }
 
-bool MU_drive_backward(const short &cm, bool special_test = false)
+void MU_drive_backward(const short &cm)
 {
-	MU_drive_forward(-cm, special_test);
+	MU_drive_forward(-cm);
 }
 
-bool MU_drive_forward(const short &cm, bool special_test = false)
+void MU_drive_forward(const short &cm)
 {
-	ResetRotationCount(GLOBAL_MOTOR12);
-	Event_setEvent(GLOBAL_EVENT_MU_READING);
+	ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
+	
+	bool vorwaerts;
+	if(cm > 0)	// damit kann man auch drive_forward negative werte übergeben und es funktioniert immer
+		vorwaerts = true;
+	else
+		vorwaerts = false;
+	global_winkel_todrive = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiß, wie oft ich 25cm vorwärts fahr
+	long degree_to_drive = cm * MU_GLOBAL_DRIVE1;	// erstmal ausrechnen wie weit ich fahren muss
+	short dig0_here = SU_Values.iCurrentDeg;	// holt sich erstmal den Referenzwert in °, damit ich weiß, ob ich mich gedreht hab in abhängigkeit vom kompass
 
-	long dig0_here = SU_Values.iCurrentDeg;	// holt sich erstmal den Referenzwert in °, damit ich weiß, ob ich mich gedreht hab
-	long degree = cm * (MU_GLOBAL_DRIVE1);	// den fehler von 1/3 grad braucht man hier nicht betrachten, da ich auf eine strecke von 2,5m eine abweichung von knapp 7° hab und das 3mm entspricht -> so genau lässt sich eh nicht regeln
-	long counter = 0;
-	long speed = 20;
-
-	if(special_test == true)
+	while(vorwaerts)	// mit dieser Schleife fahr ich solange immer 25cm ab, bis die noch zu fahrende Strecke kleiner als 25cm ist
 	{
-		while(true)
+		if(degree_to_drive < MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
 		{
-			counter++;
-			RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MINSPEED,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
-
-			// if(something)
-			//    schmeiß event und brich while ab
-			// 	  funktion wird automatisch beendet
-
-		}
-		return true;
-	}
-
-
-	bool testing_StopandGo;
-	long degree_tostart = MU_GLOBAL_STOPandGO;
-
-	if((degree - (2*MU_GLOBAL_STOPandGO)) > 0 )	// erstmal testen, ob mir der weg zum beschleunigen und normal bremsen reicht
-	{
-		degree = degree - (2*MU_GLOBAL_STOPandGO);	// erstmal die grad anpassen, die ich mit maximalgeschwindigkeit geradeausfahre
-		testing_StopandGo = true;
-	}
-	else     	// wenn der weg nicht reicht(jetzt kleiner als 800°), dann nehm ich mir genauso viel zeit zum beschleunigen wie zum stoppen
-	{
-		testing_StopandGo = false;
-		degree_tostart = degree/2;
-	}
-
-	long help_degree = degree_tostart;
-	counter = 0;
-	while(true)	// beschleunigung
-	{
-		counter++;
-		if(help_degree > MU_GLOBAL_DEGREE_ONESTEP)	// solange mein noch zu fahrender Winkel größer ist als 50°
-		{
-			RotateMotorEx(GLOBAL_MOTOR12,speed,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);	// fahre
-			speed += MU_lokal_Beschleunigung;	// erhöhe die Geschwindikeit um eine fest Konstante
-			help_degree -= MU_GLOBAL_DEGREE_ONESTEP;	// außerdem erniedrigen wir den noch zu fahrenden Winkel um den gefahrenen Winkel
-			if(speed > MU_GLOBAL_MAXSPEED)	// sollte die geschwindigkeit höher als maximalgeschwindigkeit sein
+			if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// warten bis die Motoren mit dem aktuellen Fahren fertig sind
 			{
-				speed = MU_GLOBAL_MAXSPEED;	// speed auf die maximale stellen
-				RotateMotorEx(GLOBAL_MOTOR12,speed,help_degree,0,false,false);	// und die restlichen Grad abfahren
-				break;	// dann mit der beschleunigung aufhören
-			}
+				global_winkel_todrive = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
+				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// die beiden Motoren nochmal anstossen
+				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
+				break;	// und fertig mim vorwärtsfahren
+			}	
+			
 		}
-		else      // das ist der Fall, wenn ich die maximalgeschwindigkeit nicht ganz erreicht habe, dann fahr ich einfach nur die restlichen Grad noch fertig ab
+		else if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// wenn beide Motoren gerade inaktiv sind
 		{
-			RotateMotorEx(GLOBAL_MOTOR12,speed,degree_tostart,0,false,false);	// um die restlichen Grad ausgleichen
-		}
+			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
+			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);
+			degree_to_drive -= global_winkel_todrive;	// und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
+		}		
 	}
-
-	counter = 0;
-	while(testing_StopandGo == true)	// fall, wenn ich mit maximalgeschwindigkeit vorwärts fahren will
+	while(!vorwaerts)	// fürs rückwärtsfahren, damit ich das alles in einer funktion hab, und die aufrufe von vorwärts und rückwärts fahren einfacher werden
 	{
-		counter++;
-		if(degree > MU_GLOBAL_DEGREE_ONESTEP)	// solange wie der noch zu fahrende Winkel größer ist als 50°
+		if(degree_to_drive > -MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
 		{
-			RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MAXSPEED,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
-			degree -= MU_GLOBAL_DEGREE_ONESTEP;
-		}
-		else
-		{
-			RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MAXSPEED,degree,0,false,false);	// die letzten paar Grad noch ausfahren und dann
-			break;		// abbrechen
-		}
-	}
-
-	help_degree = degree_tostart;
-	counter = 0;
-	long freq_brems = help_degree / (speed - 25);	// ich rechne mir erstmal aus, wie oft ich langsamer werden muss, damit für die restlichen grad noch so ca. 25% pwr da sind
-	while(true) // bremsung
-	{
-		counter++;
-		if(help_degree > MU_GLOBAL_DEGREE_ONESTEP)	// wenn ich noch mehr als 50° zu fahren hab
-		{
-			RotateMotorEx(GLOBAL_MOTOR12,speed,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
-			speed -= freq_brems;	// die geschwindigkeit umd oben kleiner machen
-			help_degree -= MU_GLOBAL_DEGREE_ONESTEP;	// außerdem den noch zu fahrenden winkel kleiner machen
-			if(speed < 25)		// vorsichtshalber: ausstiegsbedingung, sollte ich iwas falsch gerechnet haben
+			if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// warten bis die Motoren mit dem aktuellen Fahren fertig sind
 			{
-				RotateMotorEx(GLOBAL_MOTOR12,25,help_degree,0,false,true);
-				break;
-			}
+				global_winkel_todrive = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
+				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// die beiden Motoren nochmal anstossen
+				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
+				break;	// und fertig mim vorwärtsfahren
+			}	
+			
 		}
-		else
+		else if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// wenn beide Motoren gerade inaktiv sind
 		{
-			RotateMotorEx(GLOBAL_MOTOR12,25,help_degree,0,false,true);
-		}
-
+			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
+			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);
+			degree_to_drive += global_winkel_todrive;	// und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
+		}		
 	}
 
-	Wait(20);
-	Event_clearEvent(GLOBAL_EVENT_MU_READING);
-}
-
-bool MU_start_all_features()
-{
-	global_someth_exist = false;
-	global_Dig0 = SU_Values.iCurrentDeg;
-
-	MU_data_info.MU_x_pos = MU_GLOBAL_X_0;
-	MU_data_info.MU_y_pos = MU_GLOBLAL_Y_0;
-	MU_data_info.MU_angle = MU_GLOBAL_ANGLE_0;
-	MU_data_info.MU_sin_angle = 0;
-	MU_data_info.MU_distance = 0;
-
-#ifdef MU_feedback
-	PlayTone(100,50);
-#endif MU_feedback
-
-	StartTask(MU_informations);
-}
-
-task MU_informations()
-{
-#ifdef MU_feedback
-	PlayTone(1000,50);
-#endif MU_feedback
-	while(true)
-	{
-		MU_data_info.MU_angle = (SU_Values.iCurrentDeg - global_Dig0);
-		if(MU_data_info.MU_angle < 0)
-		{
-			MU_data_info.MU_angle += 360;	// somit habe ich immer einen positiven Winkel bezogen auf die Karte
 #ifdef MU_debug
-			TextOut(1,LCD_LINE1,"Winkel im Raum");
-			NumOut(1,LCD_LINE2, MU_data_info.MU_angle);
+	NumOut(1,LCD_LINE1,degree_to_drive);
 #endif MU_debug
-		}
-		if(Event_eventIsPresent(GLOBAL_EVENT_MU_READING))
+
+}
+
+task MU_motor1()
+{	
+	if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANDRIVE1))
+	{
+		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);
+		long to_drive = global_winkel_todrive;
+		while(true)	
 		{
-			// die informationen hier haben natürlich im moment keine aussagekraft, da diese sich darauf verlassen, dass wir uns vernünftig bewegen...
-			int pos_changing = ((MotorTachoCount(GLOBAL_MOTOR1) + MotorTachoCount(GLOBAL_MOTOR2)) / 2);
-			int help = pos_changing % 2;	// liefert mir den Rest zurück, den ich mich noch im Feld befinde in °
-			pos_changing /= MU_GLOBAL_WHEEL;	// liefert mir die Veränderung in der entsprechenden Richtung zurück
-
-			// TODO: entfernung und angle dazwischen jeweils ausrechnen, falls benötigt
-			if(MU_data_info.MU_angle == 90)	// wenn der Roboter nach links schaut(auf der Karte)
-			{
-				MU_data_info.MU_x_pos -= pos_changing;
-			}
-			else if(MU_data_info.MU_angle == 180)	// wenn der Roboter nach oben schaut(auf der Karte)
-			{
-				MU_data_info.MU_y_pos -= pos_changing;
-			}
-			else if(MU_data_info.MU_angle == 270)	// wenn der Roboter auf der Karte nach rechts schaut
-			{
-				MU_data_info.MU_x_pos += pos_changing;
-			}
-			else if(MU_data_info.MU_angle == 0)	// wenn der Roboter, wie initial bestimmt, nach unten schaut
-			{
-				MU_data_info.MU_y_pos += pos_changing;
-			}
-			else            			// wenn der Roboter in keinem der angepassten Winkel steht, dann muss ich in einen entsprechenden Winkel reinfahren und dann nochmal anfangen
-			{
-				// else fall noch ausprogrammieren
-			}
+			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED+MU_LOKAL_DIFFRENCE_MOTOR12,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
+			to_drive -= MU_GLOBAL_DEGREE_ONESTEP;
+			if(to_drive < 0)
+				break;
+			Wait(10);
 		}
-
+		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn der Motor fertig ist mit fahren, weil er den to_drive winkel abgefahren hat, dann kann ich starten	
 	}
+}
 
+task MU_motor2()
+{
+	if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANDRIVE2))
+	{
+		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// jetzt setze ich ein Event, dass ich fahre
+		long to_drive = global_winkel_todrive;	// über diese Variable kann ich jede beliebige Strecke abfahren
+		while(true)	
+		{
+			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
+			to_drive -= MU_GLOBAL_DEGREE_ONESTEP;
+			if(to_drive < 0)
+				break;
+			Wait(10);
+		}
+		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann löscht er dass "ich fahre event"
+	}
 }
 
 #ifdef MU_debug
 task main()
 {
-
+	SU_InitSensors(200);
+	Wait(10);
+	MU_start_all_features();
+	// ab hier kann ich ab jetzt ganz normal fahren
 }
 #endif MU_debug
 
