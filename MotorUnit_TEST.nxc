@@ -1,18 +1,18 @@
 #ifndef ___MOTORMODULE___
 #define ___MOTORMODULE___
 
-void MU_driveForward(const short &cm);
+void MU_drive(const short cm);
 
 void MU_drehen_by_angle(const short &angle);
 
 void MU_drehen_by_angle(const short &angle)
 {
-     TextOut(0, LCD_LINE8,FormatNum("Drehe %d°", angle));
+     TextOut(0, LCD_LINE8,FormatNum("Drehe %dÂ°", angle));
      Wait(5000);
      ClearScreen();
 }
 
-void MU_driveForward(const short &cm)
+void MU_drive(const short cm)
 {
      TextOut(0, LCD_LINE8,FormatNum("Fahre %d cm", cm));
      Wait(cm*100);
