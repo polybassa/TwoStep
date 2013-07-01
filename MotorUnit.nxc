@@ -4,7 +4,7 @@
 /*******************************
  * MotorModule
  *
- * author: Florian Laufenb√∂ck
+ * author: Florian Laufenbˆck
  * *****************************/
 
 
@@ -13,7 +13,7 @@
  * Information:
  *******************************/
  // to start the MototModule call only  MU_start_all_features() !
- // der Fehler bei der Fahrt betr√§gt bei gefahrenen 2000¬∞ ca. 2¬∞
+ // der Fehler bei der Fahrt betr‰gt bei gefahrenen 2000∞ ca. 2∞
  // -> immer aufrunden oder immer abrunden?
 /*******************************
  * Beispielkarte der Umgebung:
@@ -36,7 +36,7 @@
 	------------->x - koordinate
     und von up to down ist y-koordinate
     -> S = 5/1
-    au√üerdem gilt: der Startwinkel ist entlang der positiven y achse, sodass beim Start vom Roboter aus vorne 0¬∞ sind
+    auﬂerdem gilt: der Startwinkel ist entlang der positiven y achse, sodass beim Start vom Roboter aus vorne 0∞ sind
     *
     *
     **************************/
@@ -47,7 +47,7 @@
  * Includes
  *******************************/
 // needs the SensorModule, because of the compass
-#include "SensorModule.nxc"
+//#include "SensorModule.nxc"
 #include "TimersAndEvents.nxc"
 
 
@@ -57,12 +57,12 @@
 
 /* struct _MU_data
  *
- * unsigned int MU_x_pos:	liefert die aktuelle x-position des Fahrzeugs allein aufgrund der Odometrie zur√ºck
- * unsigned int MU_y_pos: 	liefert die aktuelle y-position des Fahrzeugs allein aufgrund der Odometrie zur√ºck
- * unsigned int MU_angle:	liefert den Winkel zur√ºck, in dem das Fahrzeug im Raum steht, zur√ºck
+ * unsigned int MU_x_pos:	liefert die aktuelle x-position des Fahrzeugs allein aufgrund der Odometrie zur¸ck
+ * unsigned int MU_y_pos: 	liefert die aktuelle y-position des Fahrzeugs allein aufgrund der Odometrie zur¸ck
+ * unsigned int MU_angle:	liefert den Winkel zur¸ck, in dem das Fahrzeug im Raum steht, zur¸ck
  *
- * short MU_sin_angle:		liefert den Winkel zur√ºck, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zur√ºck
- * float MU_distance:		liefert den abstand(luftlinie) zum Start zur√ºck; benutzt daf√ºr x-pos, y-pos
+ * short MU_sin_angle:		liefert den Winkel zur¸ck, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zur¸ck
+ * float MU_distance:		liefert den abstand(luftlinie) zum Start zur¸ck; benutzt daf¸r x-pos, y-pos
  */
 /*struct _MU_data
 {
@@ -75,33 +75,24 @@
 };
 */
 //long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
-long global_winkel_todrive;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu k√∂nnen, damit ich immer bestimmte ¬∞ abfahre
+long global_winkel_todrive;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu kˆnnen, damit ich immer bestimmte ∞ abfahre
+mutex global_motor_mutex;
 
-/* function: MU_drive_forward
- * gets: weg in cm der zur√ºckgelegt werden muss
- * f√§hrt den Weg in cm ab, f√§hrt nur geradeaus, sodass keine komplexen Bewegungen entstehen
+/* function: MU_drive
+ * gets: weg in cm der zur¸ckgelegt werden muss
+ * f‰hrt den Weg in cm ab, f‰hrt nur geradeaus, sodass keine komplexen Bewegungen entstehen
  * hat einen special_mode mit dem ich einfach so lange fahren kann, wie ich will (bzw. Event wird geworfen...)
- * liefert false zur√ºck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
- * schmei√üt am Ende der Ausf√ºhrung ein Event, sodass der Tachometer gel√∂scht werden kann
+ * liefert false zur¸ck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
+ * schmeiﬂt am Ende der Ausf¸hrung ein Event, sodass der Tachometer gelˆscht werden kann
  */
-void MU_drive_forward(const short &cm);
-
-/* functin: MU_drive_backward
- * gets: weg in cm, der zur√ºckgelegt werden soll
- * f√§hrt den weg r√ºckw√§rts ab, keine komplexen Bewegungen
- * hat einen special_mode mit dem ich einfach so lange fahren kann, wie ich will (bzw. Event wird geworfen...)
- * ruft einfach nur MU_drive_forward mit negativen Wert auf
- *  liefert false zur√ºck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
- * schmei√üt am Ende der Ausf√ºhrung ein Event, sodass der Tachometer gel√∂scht werden kann
- */
-void MU_drive_backward(const short &cm);
+void MU_drive(const short cm);
 
 /* function: MU_drehen_by_angle
  * gets: den Winkel den er sich drehen soll(positiv oder negativ)
  * 											wobei: positiv = in Uhrzeigersinnn, negativ = gegen Uhrzeigersinn
  * dreht sich um den Winkel um die eigene Achse, sodass der Mittelpunkt des Robos immer gleich ist
- *  liefert false zur√ºck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
- * nach fertigem drehen wird der Tachocounter gel√∂scht!!!!
+ *  liefert false zur¸ck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
+ * nach fertigem drehen wird der Tachocounter gelˆscht!!!!
  */
 void MU_drehen_by_angle(const short &angle);
 
@@ -109,17 +100,17 @@ void MU_drehen_by_angle(const short &angle);
  * kriegt keine Variablen
  * testet ob beide Motoren in A und C eingesteckt sind
  * startet den Task MU_informations
- * liefert false zur√ºck, sollte iwas nicht wie gew√ºnscht laufen
+ * liefert false zur¸ck, sollte iwas nicht wie gew¸nscht laufen
  */
 void MU_start_all_features();
 
 /* Task: MU_motor1
- * f√§hrt mit Motor1 einen fest definierten Weg ab
+ * f‰hrt mit Motor1 einen fest definierten Weg ab
  */
 task MU_motor1();
 
 /* Task: MU_motor2
- * f√§hrt mit Motor2 einen fest definierten Weg ab
+ * f‰hrt mit Motor2 einen fest definierten Weg ab
  */
 task MU_motor2();
 
@@ -128,18 +119,17 @@ task MU_motor2();
  * Defines:
  ******************************/
 
-#define GLOBAL_1_SEKTOR 25	// definition wie gro√ü ein Sektor im Raum ist
+#define GLOBAL_1_SEKTOR 25	// definition wie groﬂ ein Sektor im Raum ist
 #define MU_GLOBAL_ANGLE_MOTOR 360	// Winkel, damit sich das Rad einmal dreht
-#define MU_GLOBAL_UMFANG 13.5	// umfang des Rades
-#define MU_GLOBAL_DRIVE1 (MU_GLOBAL_ANGLE_MOTOR / MU_GLOBAL_UMFANG) 	// Winkel um einen cm zur√ºckzulegen
-#define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zur√ºckzulegen
-#define MU_GLOBAL_MAXSPEED 50
+#define MU_GLOBAL_UMFANG 10.8 	// umfang des Rades
+#define MU_GLOBAL_DRIVE1 (MU_GLOBAL_ANGLE_MOTOR / MU_GLOBAL_UMFANG) 	// Winkel um einen cm zur¸ckzulegen
+#define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zur¸ckzulegen
+#define MU_GLOBAL_MAXSPEED 80
 #define MU_GLOBAL_DEGREE_ONESTEP 10		// gibt die Grad an, die ich bei einer Umdrehung fahren will
 #define GLOBAL_MOTOR1 OUT_A
 #define GLOBAL_MOTOR2 OUT_C
 #define GLOBAL_MOTOR12 OUT_AC
-#define MU_GLOBAL_FEHLERKORREKTUR 7	// um wie viel Grad muss ich einen motor auf einer Seite bewegen, um den KompassSensor um 1 Grad zu korriegeren?
-#define MU_LOKAL_DIFFRENCE_MOTOR12 7	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
+#define MU_LOKAL_DIFFRENCE_MOTOR12 5	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
 #define MU_LOKAL_INSTEPS	67	
 
 /******************************
@@ -147,7 +137,7 @@ task MU_motor2();
  * using LCD_LINE 1 and 2
  ******************************/
  #define MU_debug	// debug klausel
- #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach au√üen gegeben wird
+ #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach auﬂen gegeben wird
  #define MU_mitausgleich
 
 
@@ -175,9 +165,9 @@ void MU_drehen_by_angle(const short &angle)
 	// das wiederum bedeutet, dass der Roboter, um sich auf der Stelle zu drehen, den einen Motor in positiver Richtung
 	// und den anderen Motor in negativer Richtung ansteuern muss -> um im Uhrzeigersinn: MotorA negativ, MotorC positiv
 	// sonst andersrum
-	//	l√∂sung vorerst: einfach mit RotateMotorEx und der geeigneteten Konstante versuchen das Ding zu drehen
+	//	lˆsung vorerst: einfach mit RotateMotorEx und der geeigneteten Konstante versuchen das Ding zu drehen
 	// alternativ: Erst den einen Motor, dann den anderen Motor	(von den alternativen zu bevorzugen, wenns der robo so machen darf...)
-	// alterantiv2: √ºber tasks, dann wird die ganze sache aber rel. kompliziert da vorzeichenwechsel und zwei globale variablen etc... 
+	// alterantiv2: ¸ber tasks, dann wird die ganze sache aber rel. kompliziert da vorzeichenwechsel und zwei globale variablen etc... 
 	RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MAXSPEED,angle,100,false,true);	// diese funktion muss man erst noch richtig testen
 }
 
@@ -185,123 +175,108 @@ void MU_start_all_features()
 {
 	Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
 	Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
-	Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
-	Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
+	Event_setEvent(GLOBAL_EVENT_MU_CANACT1);
+	Event_setEvent(GLOBAL_EVENT_MU_CANACT2);
 	StartTask(MU_motor1);
 	StartTask(MU_motor2);
-	Wait(10);
 }
 
-void MU_drive_backward(const short &cm)
-{
-	MU_drive_forward(-cm);
-}
-
-void MU_drive_forward(const short &cm)
+void MU_drive(const short cm)
 {
 	ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
 	
-	bool vorwaerts;
-	if(cm > 0)	// damit kann man auch drive_forward negative werte √ºbergeben und es funktioniert immer
-		vorwaerts = true;
-	else
-		vorwaerts = false;
-	global_winkel_todrive = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich wei√ü, wie oft ich 25cm vorw√§rts fahr
+	global_winkel_todrive = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiﬂ, wie oft ich 25cm vorw‰rts fahr
+	if(cm <= 0)
+       global_winkel_todrive *= -1;
 	long degree_to_drive = cm * MU_GLOBAL_DRIVE1;	// erstmal ausrechnen wie weit ich fahren muss
-	short dig0_here = SU_Values.iCurrentDeg;	// holt sich erstmal den Referenzwert in ¬∞, damit ich wei√ü, ob ich mich gedreht hab in abh√§ngigkeit vom kompass
-
-	while(vorwaerts)	// mit dieser Schleife fahr ich solange immer 25cm ab, bis die noch zu fahrende Strecke kleiner als 25cm ist
+	while(abs(degree_to_drive))	// mit dieser Schleife fahr ich solange immer 25cm ab, bis die noch zu fahrende Strecke kleiner als 25cm ist
 	{
-		if(degree_to_drive < MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
+		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
-			if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// warten bis die Motoren mit dem aktuellen Fahren fertig sind
+			Acquire(global_motor_mutex);
+			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
+			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
+			if(abs(degree_to_drive) < MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
 			{
 				global_winkel_todrive = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
+				degree_to_drive = 0;
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// die beiden Motoren nochmal anstossen
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
-				break;	// und fertig mim vorw√§rtsfahren
 			}	
-			
-		}
-		else if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// wenn beide Motoren gerade inaktiv sind
-		{
-			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
-			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);
-			degree_to_drive -= global_winkel_todrive;	// und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
-		}		
-	}
-	while(!vorwaerts)	// f√ºrs r√ºckw√§rtsfahren, damit ich das alles in einer funktion hab, und die aufrufe von vorw√§rts und r√ºckw√§rts fahren einfacher werden
-	{
-		if(degree_to_drive > -MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
-		{
-			if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// warten bis die Motoren mit dem aktuellen Fahren fertig sind
+			else
 			{
-				global_winkel_todrive = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
-				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// die beiden Motoren nochmal anstossen
+				degree_to_drive -= global_winkel_todrive;   // und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
+				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
-				break;	// und fertig mim vorw√§rtsfahren
-			}	
-			
+			}
+			Release(global_motor_mutex);
 		}
-		else if((!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1)) | (!Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2)))	// wenn beide Motoren gerade inaktiv sind
-		{
-			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
-			Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);
-			degree_to_drive += global_winkel_todrive;	// und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
-		}		
 	}
-
-#ifdef MU_debug
-	NumOut(1,LCD_LINE1,degree_to_drive);
-#endif MU_debug
-
 }
 
 task MU_motor1()
 {	
+  while(true){
 	if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANDRIVE1))
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
-		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);
-		long to_drive = global_winkel_todrive;
-		while(true)	
+		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// jetzt setze ich ein Event, dass ich fahre
+		long to_drive = global_winkel_todrive;	// ¸ber diese Variable kann ich jede beliebige Strecke abfahren
+		while(abs(to_drive))
 		{
-			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED+MU_LOKAL_DIFFRENCE_MOTOR12,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
-			to_drive -= MU_GLOBAL_DEGREE_ONESTEP;
-			if(to_drive < 0)
-				break;
+			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
+			if(to_drive <= 0)
+			{
+				oneStep *= -1;
+			}
+			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
+			to_drive -= oneStep;
+			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP)
+				to_drive = 0;
 			Wait(10);
 		}
-		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn der Motor fertig ist mit fahren, weil er den to_drive winkel abgefahren hat, dann kann ich starten	
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann lˆscht er dass "ich fahre event"
+	}
 	}
 }
 
 task MU_motor2()
 {
+  while(true){
 	if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANDRIVE2))
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
-		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// jetzt setze ich ein Event, dass ich fahre
-		long to_drive = global_winkel_todrive;	// √ºber diese Variable kann ich jede beliebige Strecke abfahren
-		while(true)	
+		Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);	// jetzt setze ich ein Event, dass ich fahre
+		long to_drive = global_winkel_todrive;	// ¸ber diese Variable kann ich jede beliebige Strecke abfahren
+		while(abs(to_drive))
 		{
-			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,MU_GLOBAL_DEGREE_ONESTEP,0,false,false);
-			to_drive -= MU_GLOBAL_DEGREE_ONESTEP;
-			if(to_drive < 0)
-				break;
+			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
+			if(to_drive <= 0)
+			{
+				oneStep *= -1;
+			}
+			RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
+			to_drive -= oneStep;
+			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP)
+				to_drive = 0;
 			Wait(10);
 		}
-		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann l√∂scht er dass "ich fahre event"
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann lˆscht er dass "ich fahre event"
+	}
 	}
 }
 
 #ifdef MU_debug
 task main()
 {
-	SU_InitSensors(200);
+	//SU_InitSensors(200);
 	Wait(10);
 	MU_start_all_features();
+	Wait(100);
 	// ab hier kann ich ab jetzt ganz normal fahren
+	MU_drive(-100);
+  Wait(1000);
+  MU_drive(25);
 }
 #endif MU_debug
 
