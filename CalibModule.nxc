@@ -2,24 +2,31 @@
 #define __CALIB_MODULE__
 
 // Includes only for testing purposes. Must be in this order in the main file
-/*
+
 #include "SensorModule.nxc"
 #include "MotorUnit.nxc"
 // #include "CalibModule.nxc"
-*/
 
-//******************************************************
+//######################################################
 // Calibration Module
 //
 // Authors: Alexander Strobl, Daniel Tatzel
-//******************************************************
+//######################################################
 
-//******************************************************
+//######################################################
 // Declarations
-//******************************************************
+//######################################################
 
 // Compass reference value used for calibration
 short CU_TempCompassRef = -1;
+byte flag = 0;
+      /*
+
+/* Function: CU_CheckObstacle
+	- Checks for obstacles in the path of the robot
+	- Throws a stop event if an unexpected obstacle appears
+*/
+void CU_CheckObstacle( byte xpos, byte ypos, short orientation );
 
 
 /* Function: CU_CalibCompassValue
@@ -38,7 +45,7 @@ unsigned short CU_CalibCompassValue( short orientation, short Offset );
 short CU_GetAzimuth( short degree );
 
 
-/* Function: CU_GetAzimuthPositive
+/* Function: CU_GetAzimuthPositve
 	- Calculates the difference in degrees between target and actual state to change the direction of the robot
 	- Needs the value of CU_CalibCompassValue( orientation, SU_InitCompassValue )
 	- Returns olny postive numbers
@@ -69,7 +76,7 @@ void CU_TurnToOrientation( short orientation );
 /* Function: CU_Drift
 	- Calculates if the robot drifted to the right or left after driving
 */
-void CU_Drift( short orientation );
+void CU_Drift( short orientation, byte xpos, byte ypos );
 
 
 /* Function: CU_PosCalibration
@@ -85,47 +92,119 @@ void CU_Drift( short orientation );
 int CU_PosCalibration( byte xpos, byte ypos, short orientation );
 
 
-//******************************************************
+//######################################################
 // Defines
-//******************************************************
+//######################################################
 
 // Should be adjusted, just first idea
-#define CU_CriticalDistance 20
+#define CU_CriticalDistance 10
 
-
-//******************************************************
-// Definitions
-//******************************************************
-
-
-
-//******************************************************
+//######################################################
 // Functions and tasks
-//******************************************************
+//######################################################
 
-task CU_CheckObstacle( )
+// Idea: Check Sensor, throw event, ControlUnit executes function?
+void CU_CheckObstacle( byte xpos, byte ypos, short orientation )
 {
+	byte FieldRange_front = 0;
+	
 	while ( true )
 	{
+		//aktuelle (theoretische) position abrufen
+	
+		SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );		
+			
 		if ( CU_CriticalDistance >= SU_Values.iDistance_Front )
 		{
+			/*
 			// Something went wrong throw stop event!!
-			
+			if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
+			{
+				while ( true )
+				{
+					tmpy--;
+					if ( g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] == '#')
+					{
+						tmpy++;
+						if ( 0 == orientation )
+						{
+							FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+						}
+						break;
+					}
+				}
+
+				while ( true )
+				{
+					tmpy++;
+					if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] )
+					{
+						tmpy--;
+						if ( 180 == orientation )
+						{
+							FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+						}
+						break;
+					}
+				}
+			}
+
+			if ( 90 == orientation || 270 == orientation ) // Ost & West Ausrichtung
+			{
+				while ( true )
+				{
+					tmpx--;
+					if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+					{
+						xpos++;
+						if (270 == orientation )
+						{
+							FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+						}
+						break;
+					}
+
+				}
+
+				while ( true )
+				{
+					tmpx++;
+					if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+					{
+						xpos--;
+						if ( 90 == orientation )
+						{
+							FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+						}
+						break;
+					}
+
+				}
+
+			}
+
 			// Idea:
 			// Check if it is an expected Wall. If not throw stop event. If expected than do nothing
-			/* if ( Wall != expected )
+			if ( CU_CriticalDistance < ( FieldRange_front * GLOBAL_1_SEKTOR ) )
 			{
-				throw stop event;
-				call CU_Drift();
-				search possible wall on map;
-				tell MotorUNit how to adjust;
-				delete stop event;
+				throw stop_event;
+				short iDriftdegree = CU_Drift();
+				
+				//search possible wall on map;
+				
+				
+				
+				//tell MotorUNit how to adjust;
+				
+				
+				delete stop_event;
 			}
 			*/
+			
+			CU_PosCalibration(xpos, ypos, orientation);
 		}
 	}
 }
-
 
 unsigned short CU_CalibCompassValue( short orientation, short Offset )
 {
@@ -154,7 +233,7 @@ short CU_GetAzimuth( short degree )
 
 	if ( 180 < tmpdeg )
 		tmpdeg -= 360;
-		
+
 	return tmpdeg;
 }
 
@@ -166,18 +245,18 @@ void CU_Measuring_front( byte FieldRange_front )
 			until(!MutexUSonic);
 			SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
 
-			
+
 			// Verarbeitung Starten (Bedenken: Wird Rueckgabewert bedingt? Wenn ja, diese Funktion trennen, wegen Rueckgabewerte
 			if ( SU_Values.iDistance_Front < ( FieldRange_front * GLOBAL_1_SEKTOR ) )
 			{
 				// Zu weit vorne 
-				MU_drive_backward( ( ( FieldRange_front * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_front ), false);
+				MU_drive_backward( ( FieldRange_front * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_Front );
 			}
 			else if ( SU_Values.iDistance_Front > ( FieldRange_front * GLOBAL_1_SEKTOR ) )
 			{
 				// Zu weit hinten
-				
-				MU_drive_forward( ( SU_Values.iDistance_Front - ( FieldRange_front * GLOBAL_1_SEKTOR ) ), false);
+
+				MU_drive_forward(  SU_Values.iDistance_Front - ( FieldRange_front * GLOBAL_1_SEKTOR ) );
 			}
 		}
 }
@@ -192,12 +271,12 @@ void CU_Measuring_rear( byte FieldRange_rear)
 			if ( SU_Values.iDistance_Back > ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
 			{
 				// Zu weit vorne 
-				MU_drive_backward( ( ( FieldRange_rear * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_front ), false);
+				MU_drive_backward( ( FieldRange_rear * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_Front );
 			}
 			else if ( SU_Values.iDistance_Back < ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
 			{
 				// Zu weit hinten
-				MU_drive_forward( ( SU_Values.FieldRange_rear - ( FieldRange_rear * GLOBAL_1_SEKTOR ) ), false);
+				MU_drive_forward( SU_Values.iDistance_Back - ( FieldRange_rear * GLOBAL_1_SEKTOR ) );
 			}
 		}
 }
@@ -214,129 +293,141 @@ void CU_TurnToOrientation( short orientation )
 		}
 }
 
-void CU_Drift( short orientation )
+void CU_Drift( short orientation, byte xpos, byte ypos )
 {
-		if ( ( -1 != CU_TempCompassRef )  )
+	if ( ( -1 != CU_TempCompassRef )  )
+	{
+		short iDiff = CU_GetAzimuthPositive( CU_TempCompassRef );
+		if ( 80 > iDiff )
 		{
-			if ( 80 > CU_GetAzimuthPositive( CU_TempCompassRef ) )
-			{
-				short side = CU_GetAzimuth( CU_TempCompassRef ) * (  -1 );
-				
-				CU_TurnToOrientation( orientation );
-				
-				// Left
-				if ( 0 > side )
-				{
-					// Do stuff and things
-				
-				}
-				else if ( 0 < side )	// Right
-				{
-					// Do stuff and things
-				
-				}
-			}
-		}
+			short side = CU_GetAzimuth( CU_TempCompassRef ) * (  -1 );
 
+			CU_TurnToOrientation( orientation );
+			// Etz steng ma wieda in da richtign Richtung
+			
+			short neworientation = 0;
+			
+			flag = 1;
+			
+			// Left
+			if ( 0 > side )
+			{
+				// rechts drahn
+				neworientation = CU_CalibCompassValue(orientation, 90);
+			}
+			else if ( 0 < side )	// Right
+			{
+				// links drahn
+				neworientation = CU_CalibCompassValue(orientation, -90);
+			}
+			
+			CU_TurnToOrientation ( neworientation );
+			
+			// zruck ind fahrrinna
+			CU_PosCalibration( neworientation, xpos, ypos ); 
+			
+			// zruck drahn
+			CU_TurnToOrientation ( orientation );
+		}
+	}
 }
 
-int CU_PosCalibration( byte xpos, byte ypos, short orientation )
+void CU_PosCalibration( byte xpos, byte ypos, short orientation )
 {
     byte tmpx = xpos;
 	byte tmpy = ypos;
 	byte FieldRange_front = 0;
 	byte FieldRange_rear = 0;
 
-		CU_Drift( orientation );
-		
-		if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
-        {
-            while ( true )
-            {
-				tmpy--;
-                if ( g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] == '#')
-				{
-					tmpy++;
-					if ( 0 == orientation )
-					{
-						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
-					}
-					else if ( 180 == orientation )
-					{
-						FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
-					}
-                    break;
-				}
-            }
+	if (flag == 0)
+		CU_Drift( orientation, xpos, ypos );	// korrigiert die Position des Roboters senkrecht zur Fahrtrichtung zurück in die Fahrrinne
+	flag = 0;
 
-            while ( true )
-            {
+	if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
+	{
+		while ( true )
+		{
+			tmpy--;
+			if ( g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] == '#')
+			{
 				tmpy++;
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] )
+				if ( 0 == orientation )
 				{
-					tmpy--;
-					if ( 0 == orientation )
-					{
-						FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
-					}
-					else if ( 180 == orientation )
-					{
-						FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
-					}
-                    break;
+					FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 				}
-            }
-        }
-
-        if ( 90 == orientation || 270 == orientation ) // Ost & West Ausrichtung
-        {
-            while ( true )
-            {
-				tmpx--;
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+				else if ( 180 == orientation )
 				{
-					xpos++;
-					if ( 90 == orientation )
-					{
-						FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
-					}
-					else if (270 == orientation )
-					{
-						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
-					}
-                    break;
+					FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 				}
-				
-            }
+				break;
+			}
+		}
 
-            while ( true )
-            {
-				tmpx++;
-                if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+		while ( true )
+		{
+			tmpy++;
+			if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * tmpy + xpos] )
+			{
+				tmpy--;
+				if ( 0 == orientation )
 				{
-					xpos--;
-					if ( 90 == orientation )
-					{
-						FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
-					}
-					else if ( 270 == orientation )
-					{
-						FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
-					}
-                    break;
+					FieldRange_rear = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
 				}
-				
-            }
+				else if ( 180 == orientation )
+				{
+					FieldRange_front = ( ypos - tmpy ); // * GLOBAL_1_SEKTOR;
+				}
+				break;
+			}
+		}
+	}
 
-        }
+	if ( 90 == orientation || 270 == orientation ) // Ost & West Ausrichtung
+	{
+		while ( true )
+		{
+			tmpx--;
+			if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+			{
+				xpos++;
+				if ( 90 == orientation )
+				{
+					FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+				}
+				else if (270 == orientation )
+				{
+					FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+				}
+				break;
+			}
 
+		}
 
-		CU_TurnToOrientation( orientation );
+		while ( true )
+		{
+			tmpx++;
+			if ( '#' == g_MapModule_WorkField.map[GLOBAL_MAP_WIDTH * ypos + tmpx] )
+			{
+				xpos--;
+				if ( 90 == orientation )
+				{
+					FieldRange_front = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+				}
+				else if ( 270 == orientation )
+				{
+					FieldRange_rear = ( xpos - tmpx ); // * GLOBAL_1_SEKTOR;
+				}
+				break;
+			}
 
-		CU_Measuring_front( FieldRange_front );
-		CU_Measuring_rear( FieldRange_rear );
-		
-		CU_TempCompassRef = SU_Values.iCurrentDeg;
+		}
+
+	}
+
+	CU_Measuring_front( FieldRange_front );
+	CU_Measuring_rear( FieldRange_rear );
+
+	CU_TempCompassRef = SU_Values.iCurrentDeg;
 }
 
 #endif /* __CALIB_MODULE__ */
