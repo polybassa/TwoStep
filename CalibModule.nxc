@@ -97,14 +97,14 @@ int CU_PosCalibration( byte xpos, byte ypos, short orientation );
 //######################################################
 
 // Should be adjusted, just first idea
-#define CU_CriticalDistance 10
+// #define CU_CriticalDistance 5
 
 //######################################################
 // Functions and tasks
 //######################################################
 
 // Idea: Check Sensor, throw event, ControlUnit executes function?
-void CU_CheckObstacle( byte xpos, byte ypos, short orientation )
+task CU_CheckObstacle(  )
 {
 	byte FieldRange_front = 0;
 	
@@ -199,9 +199,9 @@ void CU_CheckObstacle( byte xpos, byte ypos, short orientation )
 				
 				delete stop_event;
 			}
-			*/
-			
+						
 			CU_PosCalibration(xpos, ypos, orientation);
+			*/
 		}
 	}
 }
@@ -304,10 +304,10 @@ void CU_Drift( short orientation, byte xpos, byte ypos )
 
 			CU_TurnToOrientation( orientation );
 			// Etz steng ma wieda in da richtign Richtung
-			
+			/*
 			short neworientation = 0;
 			
-			flag = 1;
+			// flag = 1;
 			
 			// Left
 			if ( 0 > side )
@@ -324,10 +324,10 @@ void CU_Drift( short orientation, byte xpos, byte ypos )
 			CU_TurnToOrientation ( neworientation );
 			
 			// zruck ind fahrrinna
-			CU_PosCalibration( neworientation, xpos, ypos ); 
+			// CU_PosCalibration( neworientation, xpos, ypos ); 
 			
 			// zruck drahn
-			CU_TurnToOrientation ( orientation );
+			// CU_TurnToOrientation ( orientation );*/
 		}
 	}
 }
@@ -339,9 +339,9 @@ void CU_PosCalibration( byte xpos, byte ypos, short orientation )
 	byte FieldRange_front = 0;
 	byte FieldRange_rear = 0;
 
-	if (flag == 0)
-		CU_Drift( orientation, xpos, ypos );	// korrigiert die Position des Roboters senkrecht zur Fahrtrichtung zurück in die Fahrrinne
-	flag = 0;
+	// if (flag == 0)
+	CU_Drift( orientation, xpos, ypos );	// korrigiert die Position des Roboters senkrecht zur Fahrtrichtung zurück in die Fahrrinne
+	// flag = 0;
 
 	if ( 0 == orientation || 180 == orientation ) // Nord & Sued Ausrichtung
 	{

@@ -1,0 +1,12 @@
+
+#include "SteersmanModule.nxc"
+#include "SensorModule.nxc"
+
+task main()
+{
+     unsigned int i = SU_InitSensors(200);
+     if( i == 0)
+         Steersman_init();
+     else
+         TextOut(0,0,"SensorInit Failed");
+}

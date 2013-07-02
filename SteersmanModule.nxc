@@ -18,7 +18,7 @@
 
 #include "PathfinderModule.nxc"
 //#include "CalibModule.nxc"
-#include "MotorUnit_TEST.nxc"
+#include "MotorUnit.nxc"
 
 /******************************
  * Defines:
@@ -85,7 +85,7 @@ task Steersman_controlTask(void)
               case 'D':
               {
                   long cmToDrive = currentEntry.parameter * Steersman_SEKTORLENGTH_IN_CM;
-                  MU_drive_forward(cmToDrive);
+                  MU_drive(cmToDrive);
               } break;
               case 'T':
               {
@@ -113,7 +113,7 @@ task Steersman_controlTask(void)
     //GO HOME
     //Fahrplan von Steersman_Target nach Startpositon erstellen
     PathFinder_annotateMap('S');
-    PathFinder_searchWay(PathFinder_lastEntry.xPosition, PathFinder_lastEntry.yPosition);
+    PathFinder_searchWay2(PathFinder_lastEntry.xPosition, PathFinder_lastEntry.yPosition);
     Steersman_timeTableReadPointer = 0;
     
      while(true)
@@ -125,7 +125,7 @@ task Steersman_controlTask(void)
               case 'D':
               {
                   long cmToDrive = currentEntry.parameter * Steersman_SEKTORLENGTH_IN_CM;
-                  MU_drive_forward(cmToDrive);
+                  MU_drive(cmToDrive);
               } break;
               case 'T':
               {

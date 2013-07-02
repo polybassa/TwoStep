@@ -56,7 +56,7 @@ void Timer_initTimers(void){
                    g_Timer_AllTimers[i].mDuration = 0;
                    g_Timer_AllTimers[i].mEndTick = 0;
      }
-     Precedes(Timer_executeTimers);
+     StartTask(Timer_executeTimers);
 }
 void Timer_setTimer(unsigned int timer,unsigned int time, EventType ev) { g_Timer_AllTimers[timer].mEvent = ev; g_Timer_AllTimers[timer].mDuration = time; }
 void Timer_startTimer(unsigned int timer) { g_Timer_AllTimers[timer].mEndTick = CurrentTick() + g_Timer_AllTimers[timer].mDuration; g_Timer_AllTimers[timer].isRunning = true; }
