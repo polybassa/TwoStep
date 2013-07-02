@@ -1,0 +1,30 @@
+#download "NxtDings_16.ric"
+
+char Gui_show(void)
+{
+  char target = '1';
+  while(true)
+  {
+     FontTextOut(20, 35, "NxtDings_16.RIC", "ZIEL:");
+     FontTextOut(40, 5, "NxtDings_16.RIC", FormatNum("%c", target));
+     if( ButtonPressed(BTNRIGHT, false) )
+     {
+        target++;
+        if(target >= '3') target = '3';
+        while( ButtonPressed(BTNRIGHT, false));
+        ClearScreen();
+        continue;
+     }
+     if ( ButtonPressed(BTNLEFT, false) )
+     {
+        target--;
+        if(target <= '1') target = '1';
+        while( ButtonPressed(BTNLEFT, false));
+        ClearScreen();
+        continue;
+     }
+
+     if ( ButtonPressed(BTNCENTER, false)) return target;
+  }
+  return 0;
+}
