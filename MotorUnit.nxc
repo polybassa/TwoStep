@@ -137,7 +137,7 @@ task MU_motor2();
  * Debugs
  * using LCD_LINE 1 and 2
  ******************************/
- #define MU_debug	// debug klausel
+ //#define MU_debug	// debug klausel
  #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach auﬂen gegeben wird
  #define MU_mitausgleich
 
@@ -179,7 +179,11 @@ void MU_drehen_by_angle(short angle)
 
 			Release(global_motor_mutex);
 		}
-		while(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) || Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2));
+		while(true)
+		{
+		 if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))break;
+		 Wait(10);
+		}
 
 }
 
@@ -228,6 +232,11 @@ void MU_drive(const short cm)
 			Release(global_motor_mutex);
 		}
 	}
+	while(true)
+		{
+		 if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))break;
+		 Wait(10);
+		}
 }
 
 task MU_motor1()

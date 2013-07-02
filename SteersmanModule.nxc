@@ -17,7 +17,7 @@
  *******************************/
 
 #include "PathfinderModule.nxc"
-//#include "CalibModule.nxc"
+#include "CalibModule.nxc"
 #include "MotorUnit.nxc"
 
 /******************************
@@ -78,14 +78,24 @@ task Steersman_controlTask(void)
      PathFinder_timeTableEntry PathFinder_lastEntry;
      while(true)
      {
-         //CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
-
+         //Wait(1000);
+         ClearLine(LCD_LINE1);
+         string message = StrCat(
+                        FormatNum( "E%x", currentEntry.xPosition),
+                        FormatNum( ":%x:", currentEntry.yPosition),
+                        FormatNum( "%d=", currentEntry.orientation),
+                        FormatNum( "%c-", currentEntry.activity),
+                        FormatNum( "%d", currentEntry.parameter));
+         TextOut(0,LCD_LINE1, message);
+         Wait(2000);
+         
          switch(currentEntry.activity)
          {
               case 'D':
               {
                   long cmToDrive = currentEntry.parameter * Steersman_SEKTORLENGTH_IN_CM;
                   MU_drive(cmToDrive);
+                  MU_drive(10);
               } break;
               case 'T':
               {
@@ -93,15 +103,21 @@ task Steersman_controlTask(void)
               } break;
               default: Steersman_exception();
          }
-         
+         ClearLine(LCD_LINE2);
+          Wait(2000);
+         TextOut(0, LCD_LINE2, "PosCal");
+         CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
          //ZIELERKENNUNG
-         
+         TextOut(0, LCD_LINE2, "WayFind");
+
+
          Steersman_timeTableReadPointer++;
          if(Steersman_timeTableReadPointer >= PathFinder_timeTableWritePointer)
          {
              PathFinder_lastEntry = PathFinder_timeTable[Steersman_timeTableReadPointer - 1];
              break;
          }
+
      }
      
      //ZIELFINDUNG
@@ -119,7 +135,7 @@ task Steersman_controlTask(void)
      while(true)
      {
          //CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
-
+         Wait(1000);
          switch(currentEntry.activity)
          {
               case 'D':

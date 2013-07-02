@@ -11,7 +11,7 @@
 // Declarations
 //######################################################
 
-short SU_InitCompassValue = 0;
+short SU_InitCompassValue = 1;
 
 // Different mutex to prevent reading while the values get updated
 mutex MutexColor;
@@ -106,7 +106,7 @@ task SU_ReadSensors();
 #define SU_SONIC_RADIUS			50
 
 // Turn display messages on / off
-#define SU_SENSOR_DEBUG
+//#define SU_SENSOR_DEBUG
 
 
 //######################################################
@@ -129,17 +129,22 @@ task SU_DisplayOutput( )
     {
     TextOut( 0,LCD_LINE1, "D: " );
     NumOut( 40,LCD_LINE1, SU_Values.iCurrentDeg );
+    ClearLine(LCD_LINE1);
 
     TextOut( 0,LCD_LINE2, "C: " );
     NumOut( 40,LCD_LINE2, SU_Values.byMeasuredColor );
-
+    ClearLine(LCD_LINE2);
+    
     TextOut( 0,LCD_LINE3, "USF: " );
     NumOut( 40,LCD_LINE3, SU_Values.iDistance_Front );
-
+    ClearLine(LCD_LINE3);
+    
     TextOut( 0,LCD_LINE4, "USB: " );
     NumOut( 40,LCD_LINE4, SU_Values.iDistance_Back );
+    ClearLine(LCD_LINE4);
+    
     Wait( SU_Values.iInterval );
-    ClearScreen( );
+    //ClearScreen( );
     }
 }
 
@@ -165,11 +170,11 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
    SU_Values.iCurrentDeg = 0;
 
    SU_InitCompassValue = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
-   if ( SU_InitCompassValue <= 180 )
+   /*if ( SU_InitCompassValue <= 180 )
 	SU_InitCompassValue += 180;
    else
 	SU_InitCompassValue -= 180;
-
+	*/
    Release( MutexCmps );
 
    // UltraSonic
@@ -189,7 +194,7 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
    else
        SU_Values.iInterval = 200;
 
-   StartTask(SU_ReadSensors);
+   //StartTask(SU_ReadSensors);
    return 0;
 }
 
