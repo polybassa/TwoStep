@@ -47,6 +47,7 @@ unsigned short PathFinder_currentOrientation;
 void PathFinder_init(void);
 void PathFinder_annotateMap(const byte target);
 void PathFinder_searchWay(const char startPosition);
+void PathFinder_searchWay(const byte x_Pos, const byte y_Pos);
 void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y_Pos, const unsigned short destinationOrientation);
 void PathFinder_writeTimeTableEntry(const byte xPos, const byte yPos, const short orientation, const char activity, const short activityParameter);
 byte max(const byte v1, const byte v2);
@@ -199,6 +200,12 @@ void PathFinder_writeTurnActivityEntryInTimeTable(const byte x_Pos, const byte y
     
     rotation = rotation - 360;
     PathFinder_writeTimeTableEntry(x_Pos, y_Pos, PathFinder_currentOrientation, 'T', rotation);
+}
+
+void PathFinder_searchWay(const byte x_Pos, const byte y_Pos)
+{
+    g_PathFinder_RoadMap.map[GLOBAL_MAP_WIDTH * y_Pos + x_Pos] = 'Y';
+    PathFinder_searchWay('Y');
 }
 
 void PathFinder_searchWay(const char startPosition)

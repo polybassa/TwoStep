@@ -75,6 +75,7 @@ task Steersman_controlTask(void)
      PathFinder_annotateMap(Steersman_TARGET);
      PathFinder_searchWay('S');
      Steersman_timeTableReadPointer = 0;
+     PathFinder_timeTableEntry PathFinder_lastEntry;
      while(true)
      {
          //CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
@@ -98,6 +99,7 @@ task Steersman_controlTask(void)
          Steersman_timeTableReadPointer++;
          if(Steersman_timeTableReadPointer >= PathFinder_timeTableWritePointer)
          {
+             PathFinder_lastEntry = PathFinder_timeTable[Steersman_timeTableReadPointer - 1];
              break;
          }
      }
@@ -111,12 +113,12 @@ task Steersman_controlTask(void)
     //GO HOME
     //Fahrplan von Steersman_Target nach Startpositon erstellen
     PathFinder_annotateMap('S');
-    PathFinder_searchWay(Steersman_TARGET);
+    PathFinder_searchWay(PathFinder_lastEntry.xPosition, PathFinder_lastEntry.yPosition);
     Steersman_timeTableReadPointer = 0;
     
      while(true)
      {
-         //AUSGLEICHSAKTIVITÄT
+         //CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
 
          switch(currentEntry.activity)
          {
