@@ -75,7 +75,8 @@
 };
 */
 //long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
-long global_winkel_todrive;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu können, damit ich immer bestimmte ° abfahre
+long global_winkel_todrive1;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu können, damit ich immer bestimmte ° abfahre
+long global_winkel_todrive2;
 mutex global_motor_mutex;
 
 /* function: MU_drive
@@ -94,7 +95,7 @@ void MU_drive(const short cm);
  *  liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
  * nach fertigem drehen wird der Tachocounter gelöscht!!!!
  */
-void MU_drehen_by_angle(const short &angle);
+void MU_drehen_by_angle(short angle);
 
 /*function: MU_start_all_featurs
  * kriegt keine Variablen
@@ -159,16 +160,27 @@ task MU_motor2();
  *Functions and tasks
  *******************************/
 
-void MU_drehen_by_angle(const short &angle)
+void MU_drehen_by_angle(short angle)
 {
-	// es gilt: ein positiver winkel bedeutet, dass der Robo sich im Uhrzeigersinn dreht, bedeutet in Fahrtrichtung nach rechts
-	// das wiederum bedeutet, dass der Roboter, um sich auf der Stelle zu drehen, den einen Motor in positiver Richtung
-	// und den anderen Motor in negativer Richtung ansteuern muss -> um im Uhrzeigersinn: MotorA negativ, MotorC positiv
-	// sonst andersrum
-	//	lösung vorerst: einfach mit RotateMotorEx und der geeigneteten Konstante versuchen das Ding zu drehen
-	// alternativ: Erst den einen Motor, dann den anderen Motor	(von den alternativen zu bevorzugen, wenns der robo so machen darf...)
-	// alterantiv2: über tasks, dann wird die ganze sache aber rel. kompliziert da vorzeichenwechsel und zwei globale variablen etc... 
-	RotateMotorEx(GLOBAL_MOTOR12,MU_GLOBAL_MAXSPEED,angle,100,false,true);	// diese funktion muss man erst noch richtig testen
+     ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
+    angle *= 4.775;
+
+		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
+		{
+			Acquire(global_motor_mutex);
+			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
+			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
+
+       global_winkel_todrive1 = angle * -1;
+       global_winkel_todrive2 = angle;
+
+      Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
+      Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
+
+			Release(global_motor_mutex);
+		}
+		while(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) || Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2));
+
 }
 
 void MU_start_all_features()
@@ -185,9 +197,12 @@ void MU_drive(const short cm)
 {
 	ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
 	
-	global_winkel_todrive = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiß, wie oft ich 25cm vorwärts fahr
+	global_winkel_todrive1 = global_winkel_todrive2 = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiß, wie oft ich 25cm vorwärts fahr
 	if(cm <= 0)
-       global_winkel_todrive *= -1;
+	{
+       global_winkel_todrive1 *= -1;
+       global_winkel_todrive2 *= -1;
+  }
 	long degree_to_drive = cm * MU_GLOBAL_DRIVE1;	// erstmal ausrechnen wie weit ich fahren muss
 	while(abs(degree_to_drive))	// mit dieser Schleife fahr ich solange immer 25cm ab, bis die noch zu fahrende Strecke kleiner als 25cm ist
 	{
@@ -198,14 +213,15 @@ void MU_drive(const short cm)
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
 			if(abs(degree_to_drive) < MU_GLOBAL_WHEEL) 	// mit dieser Funktion fahre ich am Ende der fahrt die restlichen Grad ab, die man noch abzufahren ist
 			{
-				global_winkel_todrive = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
+				global_winkel_todrive1 = degree_to_drive;	// die restlichen Grad in die globale Var schreiben
+				global_winkel_todrive2 = degree_to_drive;
 				degree_to_drive = 0;
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// die beiden Motoren nochmal anstossen
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
 			}	
 			else
 			{
-				degree_to_drive -= global_winkel_todrive;   // und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
+				degree_to_drive -= global_winkel_todrive1;   // und dann noch den abgefahrenen grad von den zu fahrendem grad abziehen
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
 				Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
 			}
@@ -221,7 +237,7 @@ task MU_motor1()
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
 		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// jetzt setze ich ein Event, dass ich fahre
-		long to_drive = global_winkel_todrive;	// über diese Variable kann ich jede beliebige Strecke abfahren
+		long to_drive = global_winkel_todrive1;	// über diese Variable kann ich jede beliebige Strecke abfahren
 		while(abs(to_drive))
 		{
 			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
@@ -247,7 +263,7 @@ task MU_motor2()
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
 		Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);	// jetzt setze ich ein Event, dass ich fahre
-		long to_drive = global_winkel_todrive;	// über diese Variable kann ich jede beliebige Strecke abfahren
+		long to_drive = global_winkel_todrive2;	// über diese Variable kann ich jede beliebige Strecke abfahren
 		while(abs(to_drive))
 		{
 			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
@@ -273,10 +289,15 @@ task main()
 	Wait(10);
 	MU_start_all_features();
 	Wait(100);
-	// ab hier kann ich ab jetzt ganz normal fahren
-	MU_drive(-100);
-  Wait(1000);
-  MU_drive(25);
+  MU_drive(50);
+  MU_drehen_by_angle(90);
+  MU_drive(50);
+  MU_drehen_by_angle(90);
+  MU_drive(50);
+  MU_drehen_by_angle(90);
+  MU_drive(50);
+  Wait(10000);
+  MU_drehen_by_angle(-90);
 }
 #endif MU_debug
 
