@@ -4,7 +4,7 @@
 /*******************************
  * MotorModule
  *
- * author: Florian Laufenböck
+ * author: Florian LaufenbÃ¶ck
  * *****************************/
 
 
@@ -13,7 +13,7 @@
  * Information:
  *******************************/
  // to start the MototModule call only  MU_start_all_features() !
- // der Fehler bei der Fahrt beträgt bei gefahrenen 2000° ca. 2°
+ // der Fehler bei der Fahrt betrÃ¤gt bei gefahrenen 2000Â° ca. 2Â°
  // -> immer aufrunden oder immer abrunden?
 /*******************************
  * Beispielkarte der Umgebung:
@@ -36,7 +36,7 @@
 	------------->x - koordinate
     und von up to down ist y-koordinate
     -> S = 5/1
-    außerdem gilt: der Startwinkel ist entlang der positiven y achse, sodass beim Start vom Roboter aus vorne 0° sind
+    auÃŸerdem gilt: der Startwinkel ist entlang der positiven y achse, sodass beim Start vom Roboter aus vorne 0Â° sind
     *
     *
     **************************/
@@ -57,12 +57,12 @@
 
 /* struct _MU_data
  *
- * unsigned int MU_x_pos:	liefert die aktuelle x-position des Fahrzeugs allein aufgrund der Odometrie zurück
- * unsigned int MU_y_pos: 	liefert die aktuelle y-position des Fahrzeugs allein aufgrund der Odometrie zurück
- * unsigned int MU_angle:	liefert den Winkel zurück, in dem das Fahrzeug im Raum steht, zurück
+ * unsigned int MU_x_pos:	liefert die aktuelle x-position des Fahrzeugs allein aufgrund der Odometrie zurÃ¼ck
+ * unsigned int MU_y_pos: 	liefert die aktuelle y-position des Fahrzeugs allein aufgrund der Odometrie zurÃ¼ck
+ * unsigned int MU_angle:	liefert den Winkel zurÃ¼ck, in dem das Fahrzeug im Raum steht, zurÃ¼ck
  *
- * short MU_sin_angle:		liefert den Winkel zurück, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zurück
- * float MU_distance:		liefert den abstand(luftlinie) zum Start zurück; benutzt dafür x-pos, y-pos
+ * short MU_sin_angle:		liefert den Winkel zurÃ¼ck, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zurÃ¼ck
+ * float MU_distance:		liefert den abstand(luftlinie) zum Start zurÃ¼ck; benutzt dafÃ¼r x-pos, y-pos
  */
 /*struct _MU_data
 {
@@ -75,16 +75,16 @@
 };
 */
 //long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
-long global_winkel_todrive1;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu können, damit ich immer bestimmte ° abfahre
+long global_winkel_todrive1;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu kÃ¶nnen, damit ich immer bestimmte Â° abfahre
 long global_winkel_todrive2;
 mutex global_motor_mutex;
 
 /* function: MU_drive
- * gets: weg in cm der zurückgelegt werden muss
- * fährt den Weg in cm ab, fährt nur geradeaus, sodass keine komplexen Bewegungen entstehen
+ * gets: weg in cm der zurÃ¼ckgelegt werden muss
+ * fÃ¤hrt den Weg in cm ab, fÃ¤hrt nur geradeaus, sodass keine komplexen Bewegungen entstehen
  * hat einen special_mode mit dem ich einfach so lange fahren kann, wie ich will (bzw. Event wird geworfen...)
- * liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
- * schmeißt am Ende der Ausführung ein Event, sodass der Tachometer gelöscht werden kann
+ * liefert false zurÃ¼ck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
+ * schmeiÃŸt am Ende der AusfÃ¼hrung ein Event, sodass der Tachometer gelÃ¶scht werden kann
  */
 void MU_drive(const short cm);
 
@@ -92,8 +92,8 @@ void MU_drive(const short cm);
  * gets: den Winkel den er sich drehen soll(positiv oder negativ)
  * 											wobei: positiv = in Uhrzeigersinnn, negativ = gegen Uhrzeigersinn
  * dreht sich um den Winkel um die eigene Achse, sodass der Mittelpunkt des Robos immer gleich ist
- *  liefert false zurück, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
- * nach fertigem drehen wird der Tachocounter gelöscht!!!!
+ *  liefert false zurÃ¼ck, wenn iwas schiefgegangen ist(hinderniss, lange keine signal, bin auf farbe gesstossen)
+ * nach fertigem drehen wird der Tachocounter gelÃ¶scht!!!!
  */
 void MU_drehen_by_angle(short angle);
 
@@ -101,17 +101,17 @@ void MU_drehen_by_angle(short angle);
  * kriegt keine Variablen
  * testet ob beide Motoren in A und C eingesteckt sind
  * startet den Task MU_informations
- * liefert false zurück, sollte iwas nicht wie gewünscht laufen
+ * liefert false zurÃ¼ck, sollte iwas nicht wie gewÃ¼nscht laufen
  */
 void MU_start_all_features();
 
 /* Task: MU_motor1
- * fährt mit Motor1 einen fest definierten Weg ab
+ * fÃ¤hrt mit Motor1 einen fest definierten Weg ab
  */
 task MU_motor1();
 
 /* Task: MU_motor2
- * fährt mit Motor2 einen fest definierten Weg ab
+ * fÃ¤hrt mit Motor2 einen fest definierten Weg ab
  */
 task MU_motor2();
 
@@ -120,26 +120,24 @@ task MU_motor2();
  * Defines:
  ******************************/
 
-#define GLOBAL_1_SEKTOR 25	// definition wie groß ein Sektor im Raum ist
+#define GLOBAL_1_SEKTOR 25	// definition wie groÃŸ ein Sektor im Raum ist
 #define MU_GLOBAL_ANGLE_MOTOR 360	// Winkel, damit sich das Rad einmal dreht
 #define MU_GLOBAL_UMFANG 10.8 	// umfang des Rades
-#define MU_GLOBAL_DRIVE1 (MU_GLOBAL_ANGLE_MOTOR / MU_GLOBAL_UMFANG) 	// Winkel um einen cm zurückzulegen
-#define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zurückzulegen
+#define MU_GLOBAL_DRIVE1 (MU_GLOBAL_ANGLE_MOTOR / MU_GLOBAL_UMFANG) 	// Winkel um einen cm zurÃ¼ckzulegen
+#define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zurÃ¼ckzulegen
 #define MU_GLOBAL_MAXSPEED 80
 #define MU_GLOBAL_DEGREE_ONESTEP 10		// gibt die Grad an, die ich bei einer Umdrehung fahren will
 #define GLOBAL_MOTOR1 OUT_A
 #define GLOBAL_MOTOR2 OUT_C
 #define GLOBAL_MOTOR12 OUT_AC
 #define MU_LOKAL_DIFFRENCE_MOTOR12 5	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
-#define MU_LOKAL_INSTEPS	67	
 
 /******************************
  * Debugs
  * using LCD_LINE 1 and 2
  ******************************/
  //#define MU_debug	// debug klausel
- #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach außen gegeben wird
- #define MU_mitausgleich
+ #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach auÃŸen gegeben wird
 
 
 /*******************************
@@ -159,6 +157,19 @@ task MU_motor2();
 /*******************************
  *Functions and tasks
  *******************************/
+ 
+void MU_adjustment(void)
+{
+     long rotation1 = MotorRotationCount(GLOBAL_MOTOR1);
+     long rotation2 = MotorRotationCount(GLOBAL_MOTOR2);
+     
+#ifdef MU_debug
+
+     NumOut(0, LCD_LINE1, rotation1);
+     NumOut(20, LCD_LINE1, rotation2);
+
+#endif
+}
 
 void MU_drehen_by_angle(short angle)
 {
@@ -201,17 +212,18 @@ void MU_drive(const short cm)
 {
 	ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
 	
-	global_winkel_todrive1 = global_winkel_todrive2 = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiß, wie oft ich 25cm vorwärts fahr
+	global_winkel_todrive1 = global_winkel_todrive2 = MU_GLOBAL_WHEEL;	// erstmal den Winkel initialisieren, damit ich weiÃŸ, wie oft ich 25cm vorwÃ¤rts fahr
 	if(cm <= 0)
 	{
        global_winkel_todrive1 *= -1;
        global_winkel_todrive2 *= -1;
-  }
+    }
 	long degree_to_drive = cm * MU_GLOBAL_DRIVE1;	// erstmal ausrechnen wie weit ich fahren muss
 	while(abs(degree_to_drive))	// mit dieser Schleife fahr ich solange immer 25cm ab, bis die noch zu fahrende Strecke kleiner als 25cm ist
 	{
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
+		    MU_adjustment();
 			Acquire(global_motor_mutex);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
@@ -246,7 +258,7 @@ task MU_motor1()
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE1);
 		Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);	// jetzt setze ich ein Event, dass ich fahre
-		long to_drive = global_winkel_todrive1;	// über diese Variable kann ich jede beliebige Strecke abfahren
+		long to_drive = global_winkel_todrive1;	// Ã¼ber diese Variable kann ich jede beliebige Strecke abfahren
 		while(abs(to_drive))
 		{
 			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
@@ -260,7 +272,7 @@ task MU_motor1()
 				to_drive = 0;
 			Wait(10);
 		}
-		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann löscht er dass "ich fahre event"
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann lÃ¶scht er dass "ich fahre event"
 	}
 	}
 }
@@ -272,7 +284,7 @@ task MU_motor2()
 	{
 		Event_clearEvent(GLOBAL_EVENT_MU_CANDRIVE2);
 		Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);	// jetzt setze ich ein Event, dass ich fahre
-		long to_drive = global_winkel_todrive2;	// über diese Variable kann ich jede beliebige Strecke abfahren
+		long to_drive = global_winkel_todrive2;	// Ã¼ber diese Variable kann ich jede beliebige Strecke abfahren
 		while(abs(to_drive))
 		{
 			long oneStep = MU_GLOBAL_DEGREE_ONESTEP;
@@ -286,7 +298,7 @@ task MU_motor2()
 				to_drive = 0;
 			Wait(10);
 		}
-		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann löscht er dass "ich fahre event"
+		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann lÃ¶scht er dass "ich fahre event"
 	}
 	}
 }
