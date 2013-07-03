@@ -46,8 +46,6 @@
 /*******************************
  * Includes
  *******************************/
-// needs the SensorModule, because of the compass
-//#include "SensorModule.nxc"
 #include "TimersAndEvents.nxc"
 
 
@@ -55,26 +53,6 @@
  * Declaration
  *******************************/
 
-/* struct _MU_data
- *
- * unsigned int MU_x_pos:	liefert die aktuelle x-position des Fahrzeugs allein aufgrund der Odometrie zurück
- * unsigned int MU_y_pos: 	liefert die aktuelle y-position des Fahrzeugs allein aufgrund der Odometrie zurück
- * unsigned int MU_angle:	liefert den Winkel zurück, in dem das Fahrzeug im Raum steht, zurück
- *
- * short MU_sin_angle:		liefert den Winkel zurück, der zwischen der Gerade, die die Startposition mit der aktuellen Position verbindet, und der y-Achse zurück
- * float MU_distance:		liefert den abstand(luftlinie) zum Start zurück; benutzt dafür x-pos, y-pos
- */
-/*struct _MU_data
-{
-	unsigned int MU_x_pos;
-	unsigned int MU_y_pos;
-	long MU_angle;
-
-	long MU_sin_angle;
-	float MU_distance;
-};
-*/
-//long global_Dig0;	// das ist der winkel, der "0" ist, also der 0 winkel von dem ich alles brauche, wichtig: NUR BEIM START INITIAL BELEGEN
 long global_winkel_todrive1;	// brauch ich um zwischen den tasks und meiner fahrfunktion kommunizieren zu können, damit ich immer bestimmte ° abfahre
 long global_winkel_todrive2;
 mutex global_motor_mutex;
@@ -150,31 +128,13 @@ task MU_motor2();
 
 
 /*******************************
- * Initialisation
- ******************************/
-
-
-/*******************************
  *Functions and tasks
  *******************************/
- 
-void MU_adjustment(void)
-{
-     long rotation1 = MotorRotationCount(GLOBAL_MOTOR1);
-     long rotation2 = MotorRotationCount(GLOBAL_MOTOR2);
-     
-#ifdef MU_debug
-
-     NumOut(0, LCD_LINE1, rotation1);
-     NumOut(20, LCD_LINE1, rotation2);
-
-#endif
-}
 
 void MU_drehen_by_angle(short angle)
 {
      ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
-    angle *= 4.775;
+     angle *= 4.775;
 
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
@@ -182,12 +142,11 @@ void MU_drehen_by_angle(short angle)
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
 
-       global_winkel_todrive1 = angle * -1;
-       global_winkel_todrive2 = angle;
+            global_winkel_todrive1 = angle * -1;
+            global_winkel_todrive2 = angle;
 
-      Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
-      Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
-
+            Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE1);	// dann werden beide motorevents angschmissen,sodass die motoren mit ihrem Winkel anfangen zu fahren
+            Event_setEvent(GLOBAL_EVENT_MU_CANDRIVE2);
 			Release(global_motor_mutex);
 		}
 		while(true)
@@ -223,7 +182,6 @@ void MU_drive(const short cm)
 	{
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
-		    MU_adjustment();
 			Acquire(global_motor_mutex);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);

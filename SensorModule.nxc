@@ -12,11 +12,13 @@
 //######################################################
 
 short SU_InitCompassValue = 1;
+short SU_InitCompassValue2 = 1;
 
 // Different mutex to prevent reading while the values get updated
 mutex MutexColor;
 mutex MutexUSonic;
 mutex MutexCmps;
+mutex MutexCmps2;
 
 /* struct _SU_Values
 	- Stores all relevant sensor values
@@ -40,7 +42,8 @@ struct _SU_Values
 {
   // Compass
   unsigned int iCurrentDeg;
-
+  unsigned int iCurrentDeg2;
+  
   // Color
   byte byMeasuredColor;
   byte byTargetColor;
@@ -90,9 +93,6 @@ task SU_ReadSensors();
 // Compass library. Must be in the main directory
 #include "IMU-lib.nxc"
 
-#include "MapModule.nxc"
-
-
 
 //######################################################
 // Defines
@@ -100,6 +100,7 @@ task SU_ReadSensors();
 
 #define SU_ADDR              	0x22
 #define SU_COMPASS_SENSOR_PORT 	S1
+//#define SU_COMPASS_SENSOR2_PORT S2
 #define SU_COLOR_SENSOR       	S2
 #define SU_SONIC_FRONT       	S3
 #define SU_SONIC_BACK        	S4
@@ -116,8 +117,6 @@ task SU_ReadSensors();
 // Struct
 _SU_Values SU_Values;
 
-//#include "MotorUnit.nxc"
-
 //######################################################
 // Functions and tasks
 //######################################################
@@ -127,9 +126,13 @@ task SU_DisplayOutput( )
 {
     while( true )
     {
-    TextOut( 0,LCD_LINE5, "D: " );
-    NumOut( 40,LCD_LINE5, SU_Values.iCurrentDeg );
-
+    TextOut( 0,LCD_LINE4, "D1: " );
+    NumOut( 40,LCD_LINE4, SU_Values.iCurrentDeg );
+    
+    
+    TextOut( 0,LCD_LINE5, "D2: " );
+    NumOut( 40,LCD_LINE5, SU_Values.iCurrentDeg2 );
+    
 
     TextOut( 0,LCD_LINE6, "C: " );
     NumOut( 40,LCD_LINE6, SU_Values.byMeasuredColor );
@@ -145,6 +148,7 @@ task SU_DisplayOutput( )
     
     Wait( SU_Values.iInterval );
 
+    ClearLine(LCD_LINE4);
     ClearLine(LCD_LINE5);
     ClearLine(LCD_LINE6);
     ClearLine(LCD_LINE7);
@@ -153,21 +157,15 @@ task SU_DisplayOutput( )
     }
 }
 
-// Temp main for testing purposes, must be deleted!
-/*
-task main()
-{
-    SU_InitSensors(200);
-}
-*/
-
 unsigned int SU_InitSensors(unsigned int iReadingInterval)
 {
+#ifdef SU_COLOR_SENSOR
    // SU_COLOR_SENSOR
    Acquire( MutexColor );
    SetSensorColorFull(SU_COLOR_SENSOR);
    SU_Values.byMeasuredColor = 0;
    Release( MutexColor );
+#endif
 
    // Compass
    Acquire( MutexCmps );
@@ -175,13 +173,17 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
    SU_Values.iCurrentDeg = 0;
 
    SU_InitCompassValue = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
-   /*if ( SU_InitCompassValue <= 180 )
-	SU_InitCompassValue += 180;
-   else
-	SU_InitCompassValue -= 180;
-	*/
    Release( MutexCmps );
 
+#ifdef SU_COMPASS_SENSOR2_PORT
+   // Compass
+   Acquire( MutexCmps2 );
+   IMU_Init(SU_COMPASS_SENSOR2_PORT);
+   SU_Values.iCurrentDeg2 = 0;
+
+   SU_InitCompassValue2 = IMU_ReadCompassHeading( SU_COMPASS_SENSOR2_PORT, SU_ADDR );
+   Release( MutexCmps2 );
+#endif
    // UltraSonic
 
    // Front
@@ -222,6 +224,7 @@ task SU_CheckDistances()
 
 task SU_CheckColors()
 {
+#ifdef SU_COLOR_SENSOR
   ColorSensorReadType csr;
   csr.Port = SU_COLOR_SENSOR;
 
@@ -243,18 +246,24 @@ task SU_CheckColors()
 
      Wait(SU_Values.iInterval);
   }
+#endif
 }
 
 task SU_CheckCompass()
 {
-   while( true )
+   while(1)
    {
-      Acquire ( MutexCmps );
-      unsigned int x = 0;
-      int heading = 0;
-
-      SU_Values.iCurrentDeg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
-      Release ( MutexCmps );
+       //Compass1
+       Acquire ( MutexCmps );
+       SU_Values.iCurrentDeg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
+       Release ( MutexCmps );
+      
+#ifdef SU_COMPASS_SENSOR2_PORT
+        // Compass2
+       Acquire( MutexCmps2 );
+       SU_Values.iCurrentDeg2 = IMU_ReadCompassHeading( SU_COMPASS_SENSOR2_PORT, SU_ADDR );
+       Release( MutexCmps2 );
+#endif
 
       Wait( SU_Values.iInterval );
    }
