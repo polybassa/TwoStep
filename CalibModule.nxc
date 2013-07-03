@@ -229,8 +229,8 @@ short CU_GetAzimuthPositive( short degree )
 
 short CU_GetAzimuth( short degree )
 {
-	short tmpdeg = (degree - SU_Values.iCurrentDeg) * -1;
-	NumOut(30, LCD_LINE4, SU_Values.iCurrentDeg);
+	short tmpdeg = degree - SU_Values.iCurrentDeg;
+	//NumOut(50, LCD_LINE4, SU_Values.iCurrentDeg);
 	// unnötig weite Drehwinkel reduzieren ( >180° = unnötig!)
 	if ( tmpdeg > 180 )
 		tmpdeg -= 360;
@@ -242,44 +242,68 @@ short CU_GetAzimuth( short degree )
 
 void CU_Measuring_front( byte FieldRange_front )
 {
-		// Pruefen ob Hindernis in Reichweite ist
-		if ( ( FieldRange_front * GLOBAL_1_SEKTOR ) <= SU_SONIC_RADIUS + 1 )
-		{
-			until(!MutexUSonic);
-			SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
+     short soll_distanz = FieldRange_front * GLOBAL_1_SEKTOR;
 
-			// Verarbeitung Starten (Bedenken: Wird Rueckgabewert bedingt? Wenn ja, diese Funktion trennen, wegen Rueckgabewerte
-			if ( SU_Values.iDistance_Front < ( FieldRange_front * GLOBAL_1_SEKTOR ) )
-			{
-				// Zu weit vorne 
-				MU_drive( -1 * (( FieldRange_front * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_Front ) );
-			}
-			else if ( SU_Values.iDistance_Front > ( FieldRange_front * GLOBAL_1_SEKTOR ) )
-			{
-				// Zu weit hinten
-				MU_drive(  SU_Values.iDistance_Front - ( FieldRange_front * GLOBAL_1_SEKTOR ) );
-			}
-		}
+     if ( soll_distanz <= SU_SONIC_RADIUS && FieldRange_front != 0 )   // nicht messen wenn wand zu weit weg
+     {
+        // stehen nicht an da wand und wand in reichweite
+			  until(!MutexUSonic);
+			  SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
+			  short FrontDistance = SU_Values.iDistance_Front;
+
+        TextOut( 0, LCD_LINE4, "Front:" );
+			  NumOut( 50, LCD_LINE4, FrontDistance );
+
+        if( soll_distanz < FrontDistance)
+        {
+           // Wand zu weit weg
+           // -> an die rückwand hinfahren
+           NumOut(0, LCD_LINE3, FrontDistance - soll_distanz );
+           MU_drive( FrontDistance - soll_distanz );
+
+           // -1 (rückwärts fahren) * (FrontDistance - FieldRange_front * GLOBAL_1_SEKTOR) (differenzbetrag)
+        }
+        else if ( soll_distanz > FrontDistance)
+        {
+           // Wand zu nah dran
+           // -> von der rückwand wegfahren
+           NumOut(0, LCD_LINE3, -1 * (soll_distanz - FrontDistance ) );
+           MU_drive( -1 * (soll_distanz - FrontDistance ) );
+        }
+     }
 }
 
 void CU_Measuring_rear( byte FieldRange_rear)
 {
-		if ( ( FieldRange_rear * GLOBAL_1_SEKTOR ) <= SU_SONIC_RADIUS + 1 )
-		{
-			until(!MutexUSonic);
-			SU_Values.iDistance_Back = SensorUS ( SU_SONIC_BACK );
+     short soll_distanz = FieldRange_rear * GLOBAL_1_SEKTOR;
+     
+     if ( soll_distanz <= SU_SONIC_RADIUS && FieldRange_rear != 0 )   // nicht messen wenn wand zu weit weg
+     {
+        // stehen nicht an da wand und wand in reichweite
+			  until(!MutexUSonic);
+			  SU_Values.iDistance_Back = SensorUS ( SU_SONIC_BACK );
+			  short BackDistance = SU_Values.iDistance_Back;
 
-			if ( SU_Values.iDistance_Back > ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
-			{
-				// Zu weit vorne 
-				MU_drive( -1 * (( FieldRange_rear * GLOBAL_1_SEKTOR ) - SU_Values.iDistance_Front) );
-			}
-			else if ( SU_Values.iDistance_Back < ( FieldRange_rear * GLOBAL_1_SEKTOR ) )
-			{
-				// Zu weit hinten
-				MU_drive( SU_Values.iDistance_Back - ( FieldRange_rear * GLOBAL_1_SEKTOR ) );
-			}
-		}
+        TextOut( 0, LCD_LINE4, "Back:" );
+			  NumOut( 50, LCD_LINE4, BackDistance );
+
+        if( soll_distanz < BackDistance)
+        {
+           // Wand zu weit weg
+           // -> an die rückwand hinfahren
+           NumOut(0, LCD_LINE3, -1 * (BackDistance - soll_distanz) );
+           MU_drive( -1 * (BackDistance - soll_distanz) );
+           
+           // -1 (rückwärts fahren) * (BackDistance - FieldRange_rear * GLOBAL_1_SEKTOR) (differenzbetrag)
+        }
+        else if ( soll_distanz > BackDistance)
+        {
+           // Wand zu nah dran
+           // -> von der rückwand wegfahren
+           NumOut(0, LCD_LINE3, soll_distanz - BackDistance );
+           MU_drive( soll_distanz - BackDistance );
+        }
+     }
 }
 
 void CU_Drift( short orientation, byte xpos, byte ypos )
@@ -295,21 +319,15 @@ void CU_Drift( short orientation, byte xpos, byte ypos )
 		if ( degree != SU_Values.iCurrentDeg )
 		{
 			short degreetoturn = CU_GetAzimuth( degree );
-			NumOut(0, LCD_LINE3, SU_InitCompassValue);
-			NumOut(30, LCD_LINE3, degree);
-			NumOut(70, LCD_LINE3, orientation);
-			NumOut(70, LCD_LINE4, degreetoturn);
-			Wait(20000);
-			ClearLine(LCD_LINE4);
+			//NumOut(0, LCD_LINE3, SU_InitCompassValue);
+			//NumOut(50, LCD_LINE3, degree);
+			//NumOut(70, LCD_LINE3, orientation);
+			//NumOut(70, LCD_LINE4, degreetoturn);
+			//Wait(10000);
+			//ClearLine(LCD_LINE4);
 			
 			MU_drehen_by_angle( degreetoturn );
-			
-			PlayTone(700, 200);
-			Wait(500);
-			PlayTone(700, 200);
 		}
-		
-		
 		
 			// Etz steng ma wieda in da richtign Richtung
 			/*
@@ -349,8 +367,8 @@ void CU_PosCalibration( byte xpos, byte ypos, short orientation )
 
 	CU_Drift( orientation, xpos, ypos );	// korrigiert die Position des Roboters senkrecht zur Fahrtrichtung zurück in die Fahrrinne
 	
-	TextOut(0, LCD_LINE7, "Orientiert: ");
-	NumOut(70, LCD_LINE7, orientation);
+	TextOut(0, LCD_LINE1, "Orientiert: ");
+	NumOut(70, LCD_LINE1, orientation);
 	
 	Wait(2000);
 	
@@ -432,22 +450,16 @@ void CU_PosCalibration( byte xpos, byte ypos, short orientation )
 				}
 				break;
 			}
-
 		}
-
 	}
 	
+  ClearScreen();
+  
 	NumOut(0, LCD_LINE5, FieldRange_front);
 	NumOut(0, LCD_LINE6, FieldRange_rear);
 	
 	NumOut(40, LCD_LINE5, xpos);
 	NumOut(40, LCD_LINE6, ypos);
-
-			PlayTone(700, 200);
-			Wait(500);
-			PlayTone(700, 200);
-			Wait(500);
-			PlayTone(700, 200);
 
 	CU_Measuring_front( FieldRange_front );
 	CU_Measuring_rear( FieldRange_rear );

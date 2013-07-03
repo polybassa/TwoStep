@@ -127,23 +127,28 @@ task SU_DisplayOutput( )
 {
     while( true )
     {
-    TextOut( 0,LCD_LINE1, "D: " );
-    NumOut( 40,LCD_LINE1, SU_Values.iCurrentDeg );
-    ClearLine(LCD_LINE1);
+    TextOut( 0,LCD_LINE5, "D: " );
+    NumOut( 40,LCD_LINE5, SU_Values.iCurrentDeg );
 
-    TextOut( 0,LCD_LINE2, "C: " );
-    NumOut( 40,LCD_LINE2, SU_Values.byMeasuredColor );
-    ClearLine(LCD_LINE2);
+
+    TextOut( 0,LCD_LINE6, "C: " );
+    NumOut( 40,LCD_LINE6, SU_Values.byMeasuredColor );
+
     
-    TextOut( 0,LCD_LINE3, "USF: " );
-    NumOut( 40,LCD_LINE3, SU_Values.iDistance_Front );
-    ClearLine(LCD_LINE3);
+    TextOut( 0,LCD_LINE7, "USF: " );
+    NumOut( 40,LCD_LINE7, SU_Values.iDistance_Front );
+
     
-    TextOut( 0,LCD_LINE4, "USB: " );
-    NumOut( 40,LCD_LINE4, SU_Values.iDistance_Back );
-    ClearLine(LCD_LINE4);
+    TextOut( 0,LCD_LINE8, "USB: " );
+    NumOut( 40,LCD_LINE8, SU_Values.iDistance_Back );
+
     
     Wait( SU_Values.iInterval );
+
+    ClearLine(LCD_LINE5);
+    ClearLine(LCD_LINE6);
+    ClearLine(LCD_LINE7);
+    ClearLine(LCD_LINE8);
     //ClearScreen( );
     }
 }
@@ -194,7 +199,7 @@ unsigned int SU_InitSensors(unsigned int iReadingInterval)
    else
        SU_Values.iInterval = 200;
 
-   //StartTask(SU_ReadSensors);
+   StartTask(SU_ReadSensors);
    return 0;
 }
 

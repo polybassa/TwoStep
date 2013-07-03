@@ -266,11 +266,16 @@ task MU_motor1()
 			{
 				oneStep *= -1;
 			}
+			ResetRotationCount(GLOBAL_MOTOR1);
+			Wait(5);
 			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
-			to_drive -= oneStep;
-			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP)
+			Wait(20);
+			to_drive -= MotorRotationCount(GLOBAL_MOTOR1);
+			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP){
+        RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,to_drive,0,false,true);
 				to_drive = 0;
-			Wait(10);
+				break;
+				}
 		}
 		Event_setEvent(GLOBAL_EVENT_MU_CANACT1);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann löscht er dass "ich fahre event"
 	}
@@ -292,11 +297,17 @@ task MU_motor2()
 			{
 				oneStep *= -1;
 			}
+			ResetRotationCount(GLOBAL_MOTOR2);
+			Wait(5);
 			RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
-			to_drive -= oneStep;
+			Wait(20);
+			to_drive -= MotorRotationCount(GLOBAL_MOTOR2);
 			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP)
+			{
+			  RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,to_drive,0,false,true);
 				to_drive = 0;
-			Wait(10);
+				break;
+				}
 		}
 		Event_setEvent(GLOBAL_EVENT_MU_CANACT2);	// wenn dieser Motor seinen ganzen Winkel abgefahren hat, dann löscht er dass "ich fahre event"
 	}
@@ -310,15 +321,9 @@ task main()
 	Wait(10);
 	MU_start_all_features();
 	Wait(100);
-  MU_drive(50);
-  MU_drehen_by_angle(90);
-  MU_drive(50);
-  MU_drehen_by_angle(90);
-  MU_drive(50);
-  MU_drehen_by_angle(90);
-  MU_drive(50);
+  MU_drive(100);
   Wait(10000);
-  MU_drehen_by_angle(-90);
+  MU_drehen_by_angle(90);
 }
 #endif MU_debug
 

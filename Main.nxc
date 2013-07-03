@@ -1,28 +1,14 @@
-//#include "SteersmanModule.nxc"
+#include "SteersmanModule.nxc"
 #include "SensorModule.nxc"
-//#include "MotorUnit.nxc"
+#include "MotorUnit.nxc"
 
 task main()
 {
-     SU_InitSensors(200);
-     short deg = 0;
-     while(1)
-     {
-        deg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
-        NumOut(0, 0, deg);
-        SU_Values.iDistance_Front = SensorUS ( SU_SONIC_FRONT );
-        NumOut( 40,LCD_LINE3, SU_Values.iDistance_Front );
-        NumOut(20, 10, 5);
-     
-        Wait(100);
-        ClearLine(0);
-     
-     }
      unsigned int i = SU_InitSensors(200);
      if( i == 0)
      {
-         //MU_start_all_features();
-         //Steersman_init();
+         MU_start_all_features();
+         Steersman_init();
      }
      else
          TextOut(0,0,"SensorInit Failed");
