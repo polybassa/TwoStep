@@ -134,7 +134,9 @@ task MU_motor2();
 void MU_drehen_by_angle(short angle)
 {
      ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
-     angle *= 4.775;
+     ClearLine(LCD_LINE7);
+     NumOut(0, LCD_LINE7, angle);
+     angle *= 4.78;
 
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
@@ -225,12 +227,15 @@ task MU_motor1()
 				oneStep *= -1;
 			}
 			ResetRotationCount(GLOBAL_MOTOR1);
-			Wait(5);
+			Wait(10);
 			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
 			Wait(20);
-			to_drive -= MotorRotationCount(GLOBAL_MOTOR1);
+			long driven = MotorRotationCount(GLOBAL_MOTOR1);
+			if(abs(driven) > abs(to_drive)) break;
+			to_drive -= driven;
 			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP){
-        RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,to_drive,0,false,true);
+        RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,to_drive,0,false,false);
+        Wait(30);
 				to_drive = 0;
 				break;
 				}
@@ -256,13 +261,16 @@ task MU_motor2()
 				oneStep *= -1;
 			}
 			ResetRotationCount(GLOBAL_MOTOR2);
-			Wait(5);
+			Wait(10);
 			RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
 			Wait(20);
-			to_drive -= MotorRotationCount(GLOBAL_MOTOR2);
+      long driven = MotorRotationCount(GLOBAL_MOTOR2);
+			if(abs(driven) > abs(to_drive)) break;
+			to_drive -= driven;
 			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP)
 			{
-			  RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,to_drive,0,false,true);
+			  RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,to_drive,0,false,false);
+			  Wait(30);
 				to_drive = 0;
 				break;
 				}

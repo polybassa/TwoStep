@@ -100,8 +100,8 @@ task SU_ReadSensors();
 
 #define SU_ADDR              	0x22
 #define SU_COMPASS_SENSOR_PORT 	S1
-//#define SU_COMPASS_SENSOR2_PORT S2
-#define SU_COLOR_SENSOR       	S2
+#define SU_COMPASS_SENSOR2_PORT S2
+//#define SU_COLOR_SENSOR       	S2
 #define SU_SONIC_FRONT       	S3
 #define SU_SONIC_BACK        	S4
 #define SU_SONIC_RADIUS			50
@@ -253,26 +253,28 @@ task SU_CheckCompass()
 {
    while(1)
    {
-       //Compass1
-       Acquire ( MutexCmps );
-       SU_Values.iCurrentDeg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
-       Release ( MutexCmps );
-      
-#ifdef SU_COMPASS_SENSOR2_PORT
-        // Compass2
-       Acquire( MutexCmps2 );
-       SU_Values.iCurrentDeg2 = IMU_ReadCompassHeading( SU_COMPASS_SENSOR2_PORT, SU_ADDR );
-       Release( MutexCmps2 );
-#endif
-
-      Wait( SU_Values.iInterval );
+	   //Compass1
+	   Acquire ( MutexCmps );
+	   SU_Values.iCurrentDeg = IMU_ReadCompassHeading( SU_COMPASS_SENSOR_PORT, SU_ADDR );
+	   Release ( MutexCmps );
+	   
+	   Wait(50);
+	   
+	   #ifdef SU_COMPASS_SENSOR2_PORT
+		// Compass2
+	   Acquire( MutexCmps2 );
+	   SU_Values.iCurrentDeg2 = IMU_ReadCompassHeading( SU_COMPASS_SENSOR2_PORT, SU_ADDR );
+	   Release( MutexCmps2 );
+	   #endif
+	   
+	   Wait( SU_Values.iInterval );
    }
 }
 
 
 task SU_ReadSensors()
 {
-   Precedes(SU_CheckDistances, SU_CheckColors, SU_CheckCompass
+   Precedes(SU_CheckDistances, /*SU_CheckColors,*/ SU_CheckCompass
    #ifdef SU_SENSOR_DEBUG
    , SU_DisplayOutput
    #endif /* SU_SENSOR_DEBUG */
