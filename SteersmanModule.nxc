@@ -53,7 +53,7 @@
  * using LCD
  ******************************/
 
- #define Steersman_DEBUG
+// #define Steersman_DEBUG
  #define Steersman_FEEDBACK
  #define Steersman_SEKTORLENGTH_IN_CM 25
  #define Steersman_ADDITIONAL_LENGTH_AFTER_DRIVE_IN_CM 15
@@ -126,7 +126,7 @@ task Steersman_controlTask(void)
          TextOut(40, LCD_LINE2, "PosCal");
          Wait(1000);
 #endif
-         CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
+       //  CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
          //ZIELERKENNUNG
          
          Steersman_timeTableReadPointer++;
@@ -183,7 +183,7 @@ task Steersman_controlTask(void)
          TextOut(40, LCD_LINE2, "PosCal");
          Wait(1000);
 #endif
-         CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
+        // CU_PosCalibration(currentEntry.xPosition, currentEntry.yPosition, currentEntry.orientation);
          //ZIELERKENNUNG
          
          Steersman_timeTableReadPointer++;

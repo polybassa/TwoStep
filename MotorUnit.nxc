@@ -105,16 +105,17 @@ task MU_motor2();
 #define MU_GLOBAL_WHEEL	(MU_GLOBAL_DRIVE1 * GLOBAL_1_SEKTOR)	// Winkel um 25cm zurückzulegen
 #define MU_GLOBAL_MAXSPEED 80
 #define MU_GLOBAL_DEGREE_ONESTEP 10		// gibt die Grad an, die ich bei einer Umdrehung fahren will
-#define GLOBAL_MOTOR1 OUT_A
+#define GLOBAL_MOTOR1 OUT_B
 #define GLOBAL_MOTOR2 OUT_C
+#define GLOBAL_MOTOR_Shoot OUT_A
 #define GLOBAL_MOTOR12 OUT_AC
-#define MU_LOKAL_DIFFRENCE_MOTOR12 5	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
+#define MU_LOKAL_DIFFRENCE_MOTOR12 2	// der unterschied, den motor A weniger power hat als Motor C, kann hier global eingestellt werden
 
 /******************************
  * Debugs
  * using LCD_LINE 1 and 2
  ******************************/
- //#define MU_debug	// debug klausel
+// #define MU_debug	// debug klausel
  #define MU_feedback	// klausel, die bestimmt, wann feedback vom Robo nach außen gegeben wird
 
 
@@ -136,7 +137,7 @@ void MU_drehen_by_angle(short angle)
      ResetRotationCount(GLOBAL_MOTOR12);	// beide Motoren reseten
      ClearLine(LCD_LINE7);
      NumOut(0, LCD_LINE7, angle);
-     angle *= 4.78;
+     angle *= 4.5;
 
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
@@ -184,6 +185,7 @@ void MU_drive(const short cm)
 	{
 		if(Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT1) && Event_eventIsPresent(GLOBAL_EVENT_MU_CANACT2))
 		{
+      Wait(50);
 			Acquire(global_motor_mutex);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT1);
 			Event_clearEvent(GLOBAL_EVENT_MU_CANACT2);
@@ -228,13 +230,13 @@ task MU_motor1()
 			}
 			ResetRotationCount(GLOBAL_MOTOR1);
 			Wait(10);
-			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
-			Wait(20);
+			RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED + MU_LOKAL_DIFFRENCE_MOTOR12,oneStep,0,false,false);
+			Wait(15);
 			long driven = MotorRotationCount(GLOBAL_MOTOR1);
 			if(abs(driven) > abs(to_drive)) break;
 			to_drive -= driven;
 			if(abs(to_drive) < MU_GLOBAL_DEGREE_ONESTEP){
-        RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED,to_drive,0,false,false);
+        RotateMotorEx(GLOBAL_MOTOR1,MU_GLOBAL_MAXSPEED + MU_LOKAL_DIFFRENCE_MOTOR12,to_drive,0,false,false);
         Wait(30);
 				to_drive = 0;
 				break;
@@ -263,7 +265,7 @@ task MU_motor2()
 			ResetRotationCount(GLOBAL_MOTOR2);
 			Wait(10);
 			RotateMotorEx(GLOBAL_MOTOR2,MU_GLOBAL_MAXSPEED,oneStep,0,false,false);
-			Wait(20);
+			Wait(15);
       long driven = MotorRotationCount(GLOBAL_MOTOR2);
 			if(abs(driven) > abs(to_drive)) break;
 			to_drive -= driven;
@@ -286,10 +288,23 @@ task main()
 	//SU_InitSensors(200);
 	Wait(10);
 	MU_start_all_features();
-	Wait(100);
-  MU_drive(100);
-  Wait(10000);
+  Wait(100);
+ // MU_drive(100);
   MU_drehen_by_angle(90);
+  PlayTone(1300,100);
+  Wait(100);
+  PlayTone(1000,100);
+  Wait(100);
+  PlayTone(500,100);
+  Wait(100);
+  PlayTone(100,100);
+  Wait(100);
+  PlayTone(50,100);
+  RotateMotor(GLOBAL_MOTOR_Shoot,100,720);
+
+
+  
+  Wait(100);
 }
 #endif MU_debug
 
